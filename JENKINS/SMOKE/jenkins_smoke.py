@@ -1,0 +1,691 @@
+#!/usr/bin/env python3
+"""Smoke test workflow for the gem5 setup repository.
+
+This script provides a simple, structured entry point for:
+- cloning a repository,
+- collecting git metadata,
+- compiling gem5,
+- and running a smoke-style simulation step.
+
+The implementation follows a UVM-style logging pattern with WARNING, DEBUG,
+ERROR, and FATAL helpers, and it exposes a command-line interface for the
+requested input/output paths, branch selection, and chip configuration.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import shutil
+import subprocess
+import sys
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+DEFAULT_INPUT_DIR = Path("/Users/diya/Documents/JENKINS/SMOKE")
+DEFAULT_REPO_URL = "https://github.com/melonshreyas/gem5_Setup_R.git"
+
+
+class SmokeLogger:
+    """Simple UVM-style logger with WARNING, DEBUG, ERROR, and FATAL helpers."""
+
+    def __init__(self, verbose: bool = False) -> None:
+        self.verbose = verbose
+
+    def _emit(self, level: str, message: str) -> None:
+        print(f"[{level}] {message}")
+
+    def warning(self, message: str) -> None:
+        """Log a warning-level message."""
+        self._emit("WARNING", message)
+
+    def debug(self, message: str) -> None:
+        """Log a debug message when verbose mode is enabled."""
+        if self.verbose:
+            self._emit("DEBUG", message)
+
+    def error(self, message: str) -> None:
+        """Log an error-level message."""
+        self._emit("ERROR", message)
+
+    def fatal(self, message: str) -> None:
+        """Log a fatal message and stop the workflow with an exception."""
+        self._emit("FATAL", message)
+        raise RuntimeError(message)
+
+
+def parse_bool(value: Any) -> bool:
+    """Parse a boolean-like CLI value from strings such as true/false or 1/0."""
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+
+    normalized = str(value).strip().lower()
+    if normalized in {"1", "true", "yes", "y", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "n", "off"}:
+        return False
+    raise argparse.ArgumentTypeError(f"Unsupported boolean value: {value}")
+
+
+def parse_args() -> argparse.Namespace:
+    """Parse command-line arguments for the smoke workflow."""
+    parser = argparse.ArgumentParser(
+        description="Run a gem5 smoke workflow with repository clone, compile, and simulation steps."
+    )
+    parser.add_argument(
+        "--input-dir",
+        default=str(DEFAULT_INPUT_DIR),
+        help="Base directory where the repository workspace will be created. Default: %(default)s",
+    )
+    parser.add_argument(
+        "--output-dir",
+        default=None,
+        help="Directory used for compilation and simulation outputs. Defaults to a new SMOKE_BUILD_<NUM> folder under the input directory.",
+    )
+    parser.add_argument(
+        "--branch",
+        default="main",
+        help="Branch to check out after cloning. Default: %(default)s",
+    )
+    parser.add_argument(
+        "--chip-configuration",
+        default=None,
+        help="Path to a JSON file that contains chip or simulation configuration settings.",
+    )
+    parser.add_argument(
+        "--compile",
+        choices=["opt", "debug"],
+        default="opt",
+        help="Which gem5 build target to compile. Default: %(default)s",
+    )
+    parser.add_argument(
+        "--chip-name",
+        default=None,
+        help="Optional chip name to process from the chip configuration JSON. If omitted, all chip entries are processed.",
+    )
+    parser.add_argument(
+        "--skip-compilation",
+        "--skip_compilation",
+        dest="skip_compilation",
+        nargs="?",
+        const=True,
+        default=False,
+        type=parse_bool,
+        help="Skip the compilation step entirely. Use --skip-compilation to enable it, or --skip-compilation true/false to set the value explicitly. Default: %(default)s",
+    )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Enable verbose debug logging.",
+    )
+    return parser.parse_args()
+
+
+def resolve_output_dir(input_dir: Path, requested_output_dir: Optional[str]) -> Path:
+    """Resolve the output directory and auto-increment the default build folder."""
+    if requested_output_dir:
+        return Path(requested_output_dir).expanduser().resolve()
+
+    base_dir = input_dir.expanduser().resolve()
+    base_dir.mkdir(parents=True, exist_ok=True)
+    index = 1
+    while True:
+        candidate = base_dir / f"SMOKE_BUILD_{index}"
+        if not candidate.exists():
+            return candidate
+        index += 1
+
+
+def load_chip_configuration(path_str: Optional[str], logger: SmokeLogger) -> Dict[str, Any]:
+    """Load and validate the optional chip configuration from a JSON file."""
+    if not path_str:
+        logger.debug("No chip configuration file was provided.")
+        return {}
+
+    config_path = Path(path_str).expanduser().resolve()
+    if not config_path.exists():
+        logger.fatal(f"Chip configuration file was not found: {config_path}")
+
+    try:
+        with config_path.open("r", encoding="utf-8") as handle:
+            data = json.load(handle)
+    except json.JSONDecodeError as exc:
+        logger.fatal(f"Invalid JSON in chip configuration file: {exc}")
+
+    if not isinstance(data, dict):
+        logger.fatal("Chip configuration JSON must be an object at the top level.")
+
+    logger.debug(f"Loaded chip configuration from {config_path}")
+    return data
+
+
+def run_command(
+    command: List[str],
+    cwd: Path,
+    logger: SmokeLogger,
+    allow_failure: bool = False,
+    log_file: Optional[Path] = None,
+    input_text: Optional[str] = None,
+) -> subprocess.CompletedProcess[str]:
+    """Run a shell command and stream its output to a log file while it executes."""
+    logger.debug(f"Running command: {' '.join(command)}")
+
+    if log_file is not None:
+        log_file.parent.mkdir(parents=True, exist_ok=True)
+        log_file.write_text(
+            f"COMMAND: {' '.join(command)}\n"
+            f"CWD: {cwd}\n"
+            f"STATE: STARTED\n\n",
+            encoding="utf-8",
+        )
+
+    process = subprocess.Popen(
+        command,
+        cwd=str(cwd),
+        text=True,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        bufsize=1,
+    )
+
+    if input_text is not None and process.stdin is not None:
+        process.stdin.write(input_text)
+        process.stdin.flush()
+
+    output_lines: List[str] = []
+    if process.stdout is not None:
+        for line in process.stdout:
+            output_lines.append(line)
+            if log_file is not None:
+                with log_file.open("a", encoding="utf-8") as handle:
+                    handle.write(line)
+            if logger.verbose:
+                logger.debug(line.rstrip())
+
+    return_code = process.wait()
+    combined_output = "".join(output_lines)
+
+    if log_file is not None:
+        with log_file.open("a", encoding="utf-8") as handle:
+            handle.write(f"\nRETURN_CODE: {return_code}\n")
+
+    completed = subprocess.CompletedProcess(
+        args=command,
+        returncode=return_code,
+        stdout=combined_output,
+        stderr="",
+    )
+
+    if completed.returncode != 0 and not allow_failure:
+        logger.fatal(
+            f"Command failed with exit code {completed.returncode}: {' '.join(command)}"
+        )
+
+    return completed
+
+
+def git_clone(repo_url: str, destination_dir: Path, branch: str, logger: SmokeLogger) -> Dict[str, Any]:
+    """Clone the repository into the provided output directory and collect git metadata."""
+    destination_dir.mkdir(parents=True, exist_ok=True)
+    repo_dir = destination_dir
+
+    if not (repo_dir / ".git").exists():
+        logger.warning(f"Cloning repository into {repo_dir}")
+        run_command(["git", "clone", "--recursive", repo_url, str(repo_dir)], cwd=destination_dir.parent, logger=logger)
+    else:
+        logger.warning(f"Repository already exists at {repo_dir}; reusing it")
+        run_command(["git", "fetch", "--all", "--prune"], cwd=repo_dir, logger=logger, allow_failure=True)
+
+    run_command(["git", "submodule", "update", "--init", "--recursive"], cwd=repo_dir, logger=logger, allow_failure=True)
+
+    if branch:
+        run_command(["git", "checkout", branch], cwd=repo_dir, logger=logger, allow_failure=True)
+
+    metadata: Dict[str, Any] = {}
+    metadata["commit_id"] = run_command(["git", "rev-parse", "HEAD"], cwd=repo_dir, logger=logger).stdout.strip()
+    metadata["branch_name"] = run_command(["git", "branch", "--show-current"], cwd=repo_dir, logger=logger).stdout.strip()
+    metadata["pushed_by"] = run_command(["git", "log", "-1", "--pretty=format:%an"], cwd=repo_dir, logger=logger).stdout.strip()
+    metadata["changed_files"] = [
+        line.strip()
+        for line in run_command(["git", "status", "--short"], cwd=repo_dir, logger=logger).stdout.splitlines()
+        if line.strip()
+    ]
+
+    logger.warning(f"Git commit: {metadata['commit_id']}")
+    logger.warning(f"Git branch: {metadata['branch_name'] or branch}")
+    logger.warning(f"Pushed by: {metadata['pushed_by'] or 'unknown'}")
+    logger.warning(f"Changed files: {metadata['changed_files'] or 'none'}")
+
+    return metadata
+
+
+def should_skip_build(repo_dir: Path, gem5_binary: Path, logger: SmokeLogger) -> bool:
+    """Return True when the existing binary can be reused because relevant source files are unchanged."""
+    if not gem5_binary.exists():
+        return False
+
+    relevant_suffixes = (".cc", ".hh", ".h", ".py")
+    source_files = []
+    for path in repo_dir.rglob("*"):
+        if path.is_file() and path.suffix.lower() in relevant_suffixes:
+            source_files.append(path)
+
+    if not source_files:
+        return False
+
+    newest_source = max(path.stat().st_mtime for path in source_files)
+    binary_time = gem5_binary.stat().st_mtime
+    if binary_time >= newest_source:
+        logger.warning(f"Existing binary is up to date: {gem5_binary}")
+        return True
+
+    logger.warning("Relevant source files changed; recompilation is required.")
+    return False
+
+
+def compile_gem5(
+    repo_dir: Path,
+    output_dir: Path,
+    logger: SmokeLogger,
+    build_type: str = "opt",
+) -> tuple[Path, bool, Path, float]:
+    """Compile gem5 once into a shared build directory under the output path when needed."""
+    results_dir = output_dir / "RESULTS"
+    build_dir = output_dir / "build"
+    build_dir.mkdir(parents=True, exist_ok=True)
+
+    target = "gem5.opt" if build_type == "opt" else "gem5.debug"
+    gem5_binary = build_dir / "ALL" / target
+    fallback_binary = repo_dir / f"build/ALL/{target}"
+    if not gem5_binary.exists() and fallback_binary.exists():
+        gem5_binary = fallback_binary
+
+    if should_skip_build(repo_dir, gem5_binary, logger):
+        compile_log = output_dir / "RESULTS" / "compilation" / f"compile_{build_type}.log"
+        compile_log.parent.mkdir(parents=True, exist_ok=True)
+        compile_log.write_text("Build skipped because the existing binary is up to date.\n", encoding="utf-8")
+        logger.warning("Skipping compile step because the binary is already present and source files are unchanged.")
+        return gem5_binary, True, compile_log, 0.0
+
+    logger.warning(f"Compiling gem5 ({build_type}) inside {repo_dir}")
+    compile_log = output_dir / "RESULTS" / "compilation" / f"compile_{build_type}.log"
+    compile_log.parent.mkdir(parents=True, exist_ok=True)
+    compile_log.write_text(
+        f"Build started for {build_type}\nWorking directory: {repo_dir}\n",
+        encoding="utf-8",
+    )
+    compile_started = time.perf_counter()
+    completed = run_command(
+        [
+            "scons",
+            f"build/ALL/{target}",
+            "-j4",
+            "--ignore-style",
+            "--install-hooks",
+        ],
+        cwd=repo_dir,
+        logger=logger,
+        allow_failure=True,
+        log_file=compile_log,
+        input_text="y\n",
+    )
+
+    if gem5_binary.exists():
+        success = completed.returncode == 0
+    else:
+        fallback_binary = repo_dir / f"build/ALL/{target}"
+        if fallback_binary.exists():
+            gem5_binary = fallback_binary
+            success = completed.returncode == 0
+        else:
+            success = False
+
+    if success and gem5_binary.exists():
+        output_binary = output_dir / "build" / "ALL" / target
+        output_binary.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(gem5_binary, output_binary)
+        gem5_binary = output_binary
+    compile_runtime_seconds = round(time.perf_counter() - compile_started, 3)
+    if not success:
+        logger.error(f"Compilation failed. See log: {compile_log}")
+        return gem5_binary, False, compile_log, compile_runtime_seconds
+
+    logger.warning(f"Compilation complete. Binary: {gem5_binary}")
+    return gem5_binary, True, compile_log, compile_runtime_seconds
+
+
+def write_compilation_result(
+    compile_dir: Path,
+    chip_name: str,
+    build_type: str,
+    gem5_binary: Path,
+    compile_log: Path,
+    success: Optional[bool],
+    logger: SmokeLogger,
+) -> None:
+    """Write a JSON compilation result report into the chip-specific compile directory."""
+    compile_dir.mkdir(parents=True, exist_ok=True)
+    result_path = compile_dir / "results_compilation.json"
+    log_copy_path = compile_dir / "compile.log"
+
+    if compile_log.exists():
+        log_copy_path.write_text(compile_log.read_text(encoding="utf-8"), encoding="utf-8")
+
+    if success is None:
+        status = "SKIP"
+    elif success:
+        status = "PASS"
+    else:
+        status = "FAIL"
+
+    payload: Dict[str, Any] = {
+        "chip": chip_name,
+        "status": status,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "build_type": build_type,
+        "binary_path": str(gem5_binary),
+        "compile_directory": str(compile_dir),
+        "log_file": str(log_copy_path),
+        "result_file": str(result_path),
+    }
+
+    result_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    logger.warning(f"Wrote compilation report: {result_path}")
+
+
+def write_general_summary(
+    output_dir: Path,
+    logger: SmokeLogger,
+    git_metadata: Dict[str, Any],
+    build_type: str,
+    skip_compilation: bool,
+    compile_success: Optional[bool],
+    gem5_binary: Path,
+    compile_log: Path,
+    chip_results: List[Dict[str, Any]],
+    total_runtime_seconds: float,
+    compilation_runtime_seconds: float,
+    simulation_runtime_seconds: float,
+) -> None:
+    """Write a consolidated JSON summary with git, compile, simulation, and runtime details."""
+    summary_path = output_dir / "RESULTS" / "general_results.json"
+    chipwise_payload: Dict[str, Any] = {}
+    for entry in chip_results:
+        chip_name = entry.get("chip")
+        if chip_name:
+            chipwise_payload[chip_name] = {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "build_type": build_type,
+                "skip_compilation": skip_compilation,
+                "total_runtime_seconds": round(total_runtime_seconds, 3),
+                "compilation_runtime_seconds": round(compilation_runtime_seconds, 3),
+                "simulation_runtime_seconds": round(simulation_runtime_seconds, 3),
+                "compilation": {
+                    "status": "SKIP" if skip_compilation else ("PASS" if compile_success else "FAIL"),
+                    "success": None if skip_compilation else compile_success,
+                    "runtime_seconds": round(compilation_runtime_seconds, 3),
+                    "binary_path": str(gem5_binary),
+                    "log_file": str(compile_log),
+                    "build_type": build_type,
+                },
+                "simulation": {
+                    "status": entry.get("status", "SKIP"),
+                    "runtime_seconds": entry.get("runtime_seconds", 0.0),
+                    "output_dir": entry.get("output_dir"),
+                    "simulation_log": entry.get("simulation_log"),
+                    "return_code": entry.get("return_code"),
+                    "script": entry.get("script"),
+                    "reason": entry.get("reason"),
+                },
+            }
+
+    payload: Dict[str, Any] = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "output_dir": str(output_dir),
+        "build_type": build_type,
+        "skip_compilation": skip_compilation,
+        "total_runtime_seconds": round(total_runtime_seconds, 3),
+        "compilation_runtime_seconds": round(compilation_runtime_seconds, 3),
+        "simulation_runtime_seconds": round(simulation_runtime_seconds, 3),
+        "git_details": git_metadata,
+        "compilation": {
+            "status": "SKIP" if skip_compilation else ("PASS" if compile_success else "FAIL"),
+            "success": None if skip_compilation else compile_success,
+            "runtime_seconds": round(compilation_runtime_seconds, 3),
+            "binary_path": str(gem5_binary),
+            "log_file": str(compile_log),
+            "build_type": build_type,
+        },
+        "simulation": {
+            "runtime_seconds": round(simulation_runtime_seconds, 3),
+            "chips": chip_results,
+            "total_chips": len(chip_results),
+        },
+        "chips": chipwise_payload,
+    }
+    summary_path.parent.mkdir(parents=True, exist_ok=True)
+    summary_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    logger.warning(f"Wrote general summary: {summary_path}")
+
+
+def simulate_gem5(
+    repo_dir: Path,
+    output_dir: Path,
+    gem5_binary: Path,
+    logger: SmokeLogger,
+    chip_name: str,
+    chip_config: Dict[str, Any],
+) -> Dict[str, Any]:
+    """Run a smoke simulation for one chip and direct result files into a chip-specific directory."""
+    chip_dir = output_dir / "RESULTS" / "simulation" / chip_name
+    chip_dir.mkdir(parents=True, exist_ok=True)
+
+    command: List[str] = [str(gem5_binary)]
+    command.extend(chip_config.get("gem5_args", []))
+
+    default_script = repo_dir / "configs/example/se.py"
+    script_path: Optional[Path] = None
+    if chip_config.get("sim_script"):
+        script_path = Path(chip_config["sim_script"]).expanduser()
+        if not script_path.is_absolute():
+            script_path = repo_dir / script_path
+        command.append(str(script_path))
+    elif default_script.exists():
+        script_path = default_script
+        command.append(str(script_path))
+    else:
+        logger.warning(f"No default simulation script was found for {chip_name}; skipping simulation")
+        return {
+            "chip": chip_name,
+            "status": "SKIP",
+            "reason": "No simulation script available",
+            "output_dir": str(chip_dir),
+            "command": command,
+        }
+
+    command.extend(chip_config.get("sim_script_args", []))
+    command.extend(["--outdir", str(chip_dir)])
+
+    simulation_log = chip_dir / "simulation.log"
+    logger.warning(f"Running simulation for {chip_name} with: {' '.join(command)}")
+    simulation_started = time.perf_counter()
+    completed = run_command(command, cwd=repo_dir, logger=logger, allow_failure=True, log_file=simulation_log)
+    simulation_runtime_seconds = round(time.perf_counter() - simulation_started, 3)
+    return {
+        "chip": chip_name,
+        "status": "PASS" if completed.returncode == 0 else "FAIL",
+        "return_code": completed.returncode,
+        "command": command,
+        "output_dir": str(chip_dir),
+        "simulation_log": str(simulation_log),
+        "script": str(script_path),
+        "runtime_seconds": simulation_runtime_seconds,
+    }
+
+
+def main() -> int:
+    """Entry point for the smoke workflow."""
+    args = parse_args()
+    logger = SmokeLogger(verbose=args.verbose)
+
+    start_time = time.perf_counter()
+
+    input_dir = Path(args.input_dir).expanduser().resolve()
+    output_dir = resolve_output_dir(input_dir, args.output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    logger.warning(f"Input directory: {input_dir}")
+    logger.warning(f"Output directory: {output_dir}")
+
+    chip_config = load_chip_configuration(args.chip_configuration, logger)
+
+    repo_dir = output_dir
+    git_metadata = git_clone(DEFAULT_REPO_URL, repo_dir, args.branch, logger)
+    logger.debug(f"Git metadata captured: {git_metadata}")
+
+    results_dir = output_dir / "RESULTS"
+    (results_dir / "compilation").mkdir(parents=True, exist_ok=True)
+    (results_dir / "simulation").mkdir(parents=True, exist_ok=True)
+
+    if args.skip_compilation:
+        logger.warning("Skipping compilation step as requested.")
+        compile_log = results_dir / "compilation" / f"compile_{args.compile}.log"
+        compile_log.parent.mkdir(parents=True, exist_ok=True)
+        compile_log.write_text(
+            f"Compilation skipped by user for build type {args.compile}.\n",
+            encoding="utf-8",
+        )
+        gem5_binary = output_dir / "build" / "ALL" / ("gem5.opt" if args.compile == "opt" else "gem5.debug")
+        compile_success = None
+        compile_runtime_seconds = 0.0
+    else:
+        gem5_binary, compile_success, compile_log, compile_runtime_seconds = compile_gem5(repo_dir, output_dir, logger, build_type=args.compile)
+
+    chip_results: List[Dict[str, Any]] = []
+    simulation_runtime_seconds = 0.0
+    if isinstance(chip_config, dict):
+        selected_chips = chip_config.items()
+        if args.chip_name:
+            if args.chip_name in chip_config:
+                selected_chips = [(args.chip_name, chip_config[args.chip_name])]
+            else:
+                logger.fatal(f"Chip '{args.chip_name}' was not found in the chip configuration.")
+
+        for chip_name, chip_values in selected_chips:
+            if not isinstance(chip_values, dict):
+                continue
+            compile_dir = results_dir / "compilation" / chip_name
+            compile_dir.mkdir(parents=True, exist_ok=True)
+            logger.warning(f"Preparing compile directory for {chip_name}: {compile_dir}")
+            if args.skip_compilation:
+                logger.warning(f"Skipping simulation for {chip_name} because compilation was disabled.")
+                write_compilation_result(
+                    compile_dir,
+                    chip_name,
+                    args.compile,
+                    gem5_binary,
+                    compile_log,
+                    None,
+                    logger,
+                )
+                chip_results.append(
+                    {
+                        "chip": chip_name,
+                        "status": "SKIP",
+                        "compile_status": "SKIP",
+                        "simulation_status": "SKIP",
+                        "reason": "Compilation disabled",
+                        "output_dir": str(output_dir / "simulation" / chip_name),
+                        "runtime_seconds": 0.0,
+                        "compile_log": str(compile_log),
+                        "binary_path": str(gem5_binary),
+                        "compile_directory": str(compile_dir),
+                    }
+                )
+                continue
+
+            if not compile_success or not gem5_binary.exists():
+                logger.error(f"Skipping simulation for {chip_name} because no gem5 binary was produced.")
+                write_compilation_result(
+                    compile_dir,
+                    chip_name,
+                    args.compile,
+                    gem5_binary,
+                    compile_log,
+                    False,
+                    logger,
+                )
+                chip_results.append(
+                    {
+                        "chip": chip_name,
+                        "status": "SKIP",
+                        "compile_status": "FAIL",
+                        "simulation_status": "SKIP",
+                        "reason": "No gem5 binary produced",
+                        "output_dir": str(output_dir / "simulation" / chip_name),
+                        "runtime_seconds": 0.0,
+                        "compile_log": str(compile_log),
+                        "binary_path": str(gem5_binary),
+                        "compile_directory": str(compile_dir),
+                    }
+                )
+                continue
+
+            write_compilation_result(
+                compile_dir,
+                chip_name,
+                args.compile,
+                gem5_binary,
+                compile_log,
+                compile_success,
+                logger,
+            )
+            simulation_result = simulate_gem5(repo_dir, output_dir, gem5_binary, logger, chip_name, chip_values.get("simulate", {}))
+            simulation_runtime_seconds += simulation_result.get("runtime_seconds", 0.0)
+            chip_results.append(
+                {
+                    "chip": chip_name,
+                    "status": simulation_result["status"],
+                    "compile_status": "PASS" if compile_success else "FAIL",
+                    "simulation_status": simulation_result["status"],
+                    "output_dir": simulation_result.get("output_dir"),
+                    "simulation_log": simulation_result.get("simulation_log"),
+                    "return_code": simulation_result.get("return_code"),
+                    "script": simulation_result.get("script"),
+                    "runtime_seconds": simulation_result.get("runtime_seconds", 0.0),
+                    "compile_log": str(compile_log),
+                    "binary_path": str(gem5_binary),
+                    "compile_directory": str(compile_dir),
+                }
+            )
+    else:
+        logger.warning("Chip configuration was not a dictionary; no per-chip simulation was run.")
+
+    total_runtime_seconds = time.perf_counter() - start_time
+    write_general_summary(
+        output_dir,
+        logger,
+        git_metadata,
+        args.compile,
+        args.skip_compilation,
+        compile_success if "compile_success" in locals() else None,
+        gem5_binary if "gem5_binary" in locals() else output_dir / "build" / "ALL" / ("gem5.opt" if args.compile == "opt" else "gem5.debug"),
+        compile_log if "compile_log" in locals() else output_dir / "compilation" / f"compile_{args.compile}.log",
+        chip_results,
+        total_runtime_seconds,
+        compile_runtime_seconds if "compile_runtime_seconds" in locals() else 0.0,
+        simulation_runtime_seconds,
+    )
+
+    logger.warning("Smoke workflow completed successfully.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+
