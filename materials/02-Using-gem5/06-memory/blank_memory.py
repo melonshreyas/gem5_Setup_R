@@ -1,24 +1,22 @@
 """
-This script correlates with the slides on MemCtrl() and MemInterface().
+This script correlates with the slides on MemCtrl() and MemCtrlInterface().
 
-This script currently has no memory system.
-
-Add a memory controller and memory interface to the system.
-Connect the memory controller to the memory bus.
+This script creates a memory controller and memory interface and
+connects them to the memory bus.
 
 to run this script, use the following command:
 $ gem5/build/NULL/gem5.opt /workspaces/2024/materials/02-Using-gem5/\
-06-memory/blank_memory.py
+06-memory/completed/blank_memory.py
 
 
 """
+
 # import the m5 (gem5) library created when gem5 is built
 import m5
 # import all of the SimObjects
 from m5.objects import *
 from m5.util.convert import *
 
-import argparse
 import math
 
 
@@ -53,6 +51,18 @@ system.membus = SystemXBar(width = 64, max_routing_table_size = 16777216)
 system.tgen.port = system.membus.cpu_side_ports
 
 ## insert memory controller and interface here
+
+# memory controller parameters
+system.mem_ctrl = MemCtrl()
+system.mem_ctrl.mem_sched_policy = "fcfs"
+
+# memory interface parameters
+system.mem_ctrl.dram = DDR4_2400_16x4()
+system.mem_ctrl.dram.range = AddrRange('512MB')
+system.mem_ctrl.dram.read_buffer_size = 32
+system.mem_ctrl.dram.write_buffer_size = 64
+
+system.mem_ctrl.port = system.membus.mem_side_ports
 
 
 ##
