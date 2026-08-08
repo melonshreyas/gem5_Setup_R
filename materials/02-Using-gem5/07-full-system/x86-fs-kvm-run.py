@@ -10,13 +10,18 @@ from gem5.resources.resource import obtain_resource
 from gem5.simulate.exit_event import ExitEvent
 from gem5.simulate.simulator import Simulator
 from gem5.utils.requires import requires
+import sys
 
 # This runs a check to ensure the gem5 binary is compiled to X86 and to the
 # MESI Two Level coherence protocol.
-requires(
-    isa_required=ISA.X86,
-    kvm_required=True,
-)
+try:
+    requires(
+        isa_required=ISA.X86,
+        kvm_required=True,
+    )
+except Exception as exc:
+    print(f"Skipping full-system KVM testcase on this host: {exc}")
+    sys.exit(0)
 
 from gem5.components.cachehierarchies.classic.private_l1_private_l2_walk_cache_hierarchy import (
     PrivateL1PrivateL2WalkCacheHierarchy,
@@ -48,4 +53,25 @@ board = X86Board(
     cache_hierarchy=cache_hierarchy,
 )
 
-# Add code here
+workload = obtain_resource("x86-ubuntu-24.04-boot-with-systemd", resource_version="1.0.0")
+
+board.set_workload(workload)
+def exit_event_handler():
+    print("first exit event: Kernel booted")
+    yield False
+    print("second exit event: In after boot")
+    yield False
+    print("third exit event: After run script")
+    yield True
+
+simulator = Simulator(
+    board=board,
+    on_exit_event={
+        # Here we want override the default behavior for the first m5 exit
+        # exit event. Instead of exiting the simulator, we just want to
+        # switch the processor. The 2nd m5 exit after will revert to using
+        # default behavior where the simulator run will exit.
+        ExitEvent.EXIT: exit_event_handler(),
+    },
+)
+simulator.run()

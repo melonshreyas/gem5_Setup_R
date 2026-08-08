@@ -348,7 +348,8 @@ def compile_gem5(
     if success and gem5_binary.exists():
         output_binary = output_dir / "build" / "ALL" / target
         output_binary.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(gem5_binary, output_binary)
+        if gem5_binary.resolve() != output_binary.resolve():
+            shutil.copy2(gem5_binary, output_binary)
         gem5_binary = output_binary
     compile_runtime_seconds = round(time.perf_counter() - compile_started, 3)
     if not success:
@@ -473,18 +474,36 @@ def write_general_summary(
     logger.warning(f"Wrote general summary: {summary_path}")
 
 
-def simulate_gem5(
+def expand_simulation_cases(chip_config: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Return one or more simulation cases from the chip configuration."""
+    simulate_config = chip_config.get("simulate", {})
+    if not isinstance(simulate_config, dict):
+        return [{"name": "default", "config": {}}]
+
+    named_cases = simulate_config.get("tests")
+    if isinstance(named_cases, dict) and named_cases:
+        cases = []
+        for case_name, case_config in named_cases.items():
+            if isinstance(case_config, dict):
+                merged_case = dict(simulate_config)
+                merged_case.pop("tests", None)
+                merged_case.update(case_config)
+                merged_case.setdefault("case_name", case_name)
+                merged_case.setdefault("category", case_name)
+                cases.append({"name": case_name, "config": merged_case})
+        return cases or [{"name": "default", "config": simulate_config}]
+
+    return [{"name": "default", "config": simulate_config}]
+
+
+def build_simulation_command(
     repo_dir: Path,
-    output_dir: Path,
     gem5_binary: Path,
-    logger: SmokeLogger,
     chip_name: str,
     chip_config: Dict[str, Any],
-) -> Dict[str, Any]:
-    """Run a smoke simulation for one chip and direct result files into a chip-specific directory."""
-    chip_dir = output_dir / "RESULTS" / "simulation" / chip_name
-    chip_dir.mkdir(parents=True, exist_ok=True)
-
+    case_name: str,
+) -> List[str]:
+    """Build the gem5 command line for a chip simulation case."""
     command: List[str] = [str(gem5_binary)]
     command.extend(chip_config.get("gem5_args", []))
 
@@ -498,21 +517,118 @@ def simulate_gem5(
     elif default_script.exists():
         script_path = default_script
         command.append(str(script_path))
+
+    sim_script_args = list(chip_config.get("sim_script_args", []))
+
+    cleaned_args: List[str] = []
+    skip_next = False
+    for index, token in enumerate(sim_script_args):
+        if skip_next:
+            skip_next = False
+            continue
+        if token == "--outdir":
+            skip_next = True
+            continue
+        if str(token).startswith("--outdir="):
+            continue
+        cleaned_args.append(token)
+
+    outdir = chip_config.get("outdir")
+    if not outdir:
+        outdir = f"{chip_name}_{case_name}"
+    if not str(outdir).startswith("/"):
+        outdir = str(repo_dir / "RESULTS" / "simulation" / chip_name / case_name / str(outdir))
+    cleaned_args.extend([f"--outdir={outdir}"])
+
+    command.extend(cleaned_args)
+    return command
+
+
+def simulate_gem5(
+    repo_dir: Path,
+    output_dir: Path,
+    gem5_binary: Path,
+    logger: SmokeLogger,
+    chip_name: str,
+    chip_config: Dict[str, Any],
+    case_name: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Run a smoke simulation for one chip and direct result files into a chip-specific directory."""
+    case_name = case_name or chip_config.get("case_name", "default")
+    chip_dir = output_dir / "RESULTS" / "simulation" / chip_name / case_name
+    chip_dir.mkdir(parents=True, exist_ok=True)
+
+    script_path: Optional[Path] = None
+    if chip_config.get("sim_script"):
+        candidate = Path(str(chip_config["sim_script"])).expanduser()
+        script_path = candidate if candidate.is_absolute() else (repo_dir / candidate)
     else:
-        logger.warning(f"No default simulation script was found for {chip_name}; skipping simulation")
+        default_script = repo_dir / "configs/example/se.py"
+        if default_script.exists():
+            script_path = default_script
+
+    if script_path is None or not script_path.exists():
+        logger.warning(
+            f"No simulation script was found for {chip_name}/{case_name}; skipping simulation"
+        )
         return {
             "chip": chip_name,
             "status": "SKIP",
             "reason": "No simulation script available",
             "output_dir": str(chip_dir),
-            "command": command,
+            "command": [],
         }
 
-    command.extend(chip_config.get("sim_script_args", []))
-    command.extend(["--outdir", str(chip_dir)])
+    case_outdir = chip_config.get("outdir") or case_name
+    if not str(case_outdir).startswith("/"):
+        resolved_outdir = output_dir / "RESULTS" / "simulation" / chip_name / str(case_outdir)
+    else:
+        resolved_outdir = Path(str(case_outdir))
+    resolved_outdir.mkdir(parents=True, exist_ok=True)
 
-    simulation_log = chip_dir / "simulation.log"
-    logger.warning(f"Running simulation for {chip_name} with: {' '.join(command)}")
+    # Build script args from chip configuration and remove args that should be
+    # handled at the gem5 level or are not consumed by these materials scripts.
+    raw_script_args = [str(token) for token in chip_config.get("sim_script_args", [])]
+    script_args: List[str] = []
+    skip_next = False
+    workload_stripped = False
+    for token in raw_script_args:
+        if skip_next:
+            skip_next = False
+            continue
+        if token == "--outdir":
+            skip_next = True
+            continue
+        if token.startswith("--outdir="):
+            continue
+        if token == "--workload":
+            skip_next = True
+            workload_stripped = True
+            continue
+        if token.startswith("--workload="):
+            workload_stripped = True
+            continue
+        script_args.append(token)
+
+    if workload_stripped:
+        logger.warning(
+            f"Ignoring --workload for {chip_name}/{case_name}; script does not consume this argument."
+        )
+
+    command: List[str] = [
+        str(gem5_binary),
+        *[str(arg) for arg in chip_config.get("gem5_args", [])],
+        f"--outdir={resolved_outdir}",
+        "--redirect-stdout",
+        "--redirect-stderr",
+        str(script_path),
+        *script_args,
+    ]
+
+    simulation_log = resolved_outdir / "simulation.log"
+    logger.warning(
+        f"Running simulation for {chip_name}/{case_name} with: {' '.join(command)}"
+    )
     simulation_started = time.perf_counter()
     completed = run_command(command, cwd=repo_dir, logger=logger, allow_failure=True, log_file=simulation_log)
     simulation_runtime_seconds = round(time.perf_counter() - simulation_started, 3)
@@ -521,7 +637,7 @@ def simulate_gem5(
         "status": "PASS" if completed.returncode == 0 else "FAIL",
         "return_code": completed.returncode,
         "command": command,
-        "output_dir": str(chip_dir),
+        "output_dir": str(resolved_outdir),
         "simulation_log": str(simulation_log),
         "script": str(script_path),
         "runtime_seconds": simulation_runtime_seconds,
@@ -645,24 +761,39 @@ def main() -> int:
                 compile_success,
                 logger,
             )
-            simulation_result = simulate_gem5(repo_dir, output_dir, gem5_binary, logger, chip_name, chip_values.get("simulate", {}))
-            simulation_runtime_seconds += simulation_result.get("runtime_seconds", 0.0)
-            chip_results.append(
-                {
-                    "chip": chip_name,
-                    "status": simulation_result["status"],
-                    "compile_status": "PASS" if compile_success else "FAIL",
-                    "simulation_status": simulation_result["status"],
-                    "output_dir": simulation_result.get("output_dir"),
-                    "simulation_log": simulation_result.get("simulation_log"),
-                    "return_code": simulation_result.get("return_code"),
-                    "script": simulation_result.get("script"),
-                    "runtime_seconds": simulation_result.get("runtime_seconds", 0.0),
-                    "compile_log": str(compile_log),
-                    "binary_path": str(gem5_binary),
-                    "compile_directory": str(compile_dir),
-                }
-            )
+            simulation_cases = expand_simulation_cases(chip_values)
+            for case in simulation_cases:
+                case_name = case["name"]
+                case_config = case["config"]
+                case_dir = output_dir / "RESULTS" / "simulation" / chip_name / case_name
+                case_dir.mkdir(parents=True, exist_ok=True)
+                simulation_result = simulate_gem5(
+                    repo_dir,
+                    output_dir,
+                    gem5_binary,
+                    logger,
+                    chip_name,
+                    case_config,
+                    case_name=case_name,
+                )
+                simulation_runtime_seconds += simulation_result.get("runtime_seconds", 0.0)
+                chip_results.append(
+                    {
+                        "chip": chip_name,
+                        "case": case_name,
+                        "status": simulation_result["status"],
+                        "compile_status": "PASS" if compile_success else "FAIL",
+                        "simulation_status": simulation_result["status"],
+                        "output_dir": simulation_result.get("output_dir"),
+                        "simulation_log": simulation_result.get("simulation_log"),
+                        "return_code": simulation_result.get("return_code"),
+                        "script": simulation_result.get("script"),
+                        "runtime_seconds": simulation_result.get("runtime_seconds", 0.0),
+                        "compile_log": str(compile_log),
+                        "binary_path": str(gem5_binary),
+                        "compile_directory": str(compile_dir),
+                    }
+                )
     else:
         logger.warning("Chip configuration was not a dictionary; no per-chip simulation was run.")
 
