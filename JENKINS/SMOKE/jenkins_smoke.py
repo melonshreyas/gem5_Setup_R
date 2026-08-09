@@ -139,8 +139,9 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--chip-name",
+        nargs="*",
         default=None,
-        help="Optional chip name to process from the chip configuration JSON. If omitted, all chip entries are processed.",
+        help="Optional chip names to process from the chip configuration JSON. If omitted or empty, all chip entries are processed. You can provide multiple names, for example: --chip-name CHIP_1 CHIP_2.",
     )
     parser.add_argument(
         "--skip-compilation",
@@ -204,7 +205,84 @@ def parse_args() -> argparse.Namespace:
         default="gem5 Smoke Report",
         help="Email subject for the sent report. Default: %(default)s",
     )
+    parser.add_argument(
+        "--lsf",
+        type=int,
+        choices=[0, 1],
+        default=0,
+        help="Choose execution mode: 0 for local execution, 1 to submit a bsub job. Default: %(default)s",
+    )
+    parser.add_argument(
+        "--lsf-queue",
+        default="normal",
+        help="LSF queue name to use when --lsf 1 is selected. Default: %(default)s",
+    )
+    parser.add_argument(
+        "--lsf-memory",
+        default="64GB",
+        help="Requested memory for the LSF job when --lsf 1 is selected. Default: %(default)s",
+    )
+    parser.add_argument(
+        "--lsf-walltime",
+        default="24:00",
+        help="Walltime for the LSF job when --lsf 1 is selected. Default: %(default)s",
+    )
     return parser.parse_args()
+
+
+def build_lsf_submission_command(args: argparse.Namespace, output_dir: Path, logger: SmokeLogger) -> List[str]:
+    """Create a bsub command that runs the smoke workflow in an LSF job."""
+    command = [
+        "bsub",
+        "-q",
+        args.lsf_queue,
+        "-M",
+        args.lsf_memory,
+        "-W",
+        args.lsf_walltime,
+        "-o",
+        str(output_dir / "lsf_submit.log"),
+        "-e",
+        str(output_dir / "lsf_submit.err"),
+        "python3",
+        str(Path(__file__).resolve()),
+        "--input-dir",
+        args.input_dir,
+        "--output-dir",
+        str(output_dir),
+        "--branch",
+        args.branch,
+        "--chip-configuration",
+        args.chip_configuration,
+        "--compile",
+        args.compile,
+    ]
+    chip_names = args.chip_name or []
+    if chip_names:
+        command.extend(["--chip-name", *chip_names])
+    if args.skip_compilation:
+        command.append("--skip-compilation")
+    if args.skip_simulation:
+        command.append("--skip_simulation")
+    if args.dry_run:
+        command.append("--dry_run")
+    if args.send_email:
+        command.append("--send-email")
+    if args.smtp_server:
+        command.extend(["--smtp-server", args.smtp_server])
+    if args.smtp_port:
+        command.extend(["--smtp-port", str(args.smtp_port)])
+    if args.sender_email:
+        command.extend(["--sender-email", args.sender_email])
+    if args.sender_password:
+        command.extend(["--sender-password", args.sender_password])
+    if args.recipient_email:
+        for recipient in args.recipient_email:
+            command.extend(["--recipient-email", recipient])
+    if args.email_subject != "gem5 Smoke Report":
+        command.extend(["--email-subject", args.email_subject])
+    command.extend(["--lsf", "0"])
+    return command
 
 
 def resolve_output_dir(input_dir: Path, requested_output_dir: Optional[str]) -> Path:
@@ -705,6 +783,34 @@ def update_history_results(output_dir: Path, logger: SmokeLogger) -> None:
     logger.warning(f"Updated history results: {history_path}")
 
 
+def select_chips(
+    chip_config: Dict[str, Any],
+    chip_names: Optional[List[str]],
+    logger: SmokeLogger,
+) -> List[tuple[str, Dict[str, Any]]]:
+    """Return the configured chips to process.
+
+    By design, this now requires an explicit chip selection. To re-enable the
+    previous behavior of running every chip when no filter is given, replace
+    the empty-selection branch with the full chip list.
+    """
+    if not isinstance(chip_config, dict):
+        return []
+
+    normalized_names = [str(name).strip() for name in (chip_names or []) if str(name).strip()]
+    if not normalized_names:
+        logger.fatal("No chip names were provided. Please pass one or more --chip-name values.")
+        return []
+
+    selected: List[tuple[str, Dict[str, Any]]] = []
+    for chip_name in normalized_names:
+        if chip_name in chip_config:
+            selected.append((chip_name, chip_config[chip_name]))
+        else:
+            logger.fatal(f"Chip '{chip_name}' was not found in the chip configuration.")
+    return selected
+
+
 def expand_simulation_cases(chip_config: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Return one or more simulation cases from the chip configuration."""
     simulate_config = chip_config.get("simulate", {})
@@ -937,13 +1043,7 @@ def main() -> int:
         planned_compile_command = build_compile_command(repo_dir, args.compile)
         planned_simulation_commands: List[Dict[str, Any]] = []
         if isinstance(chip_config, dict):
-            selected_chips = chip_config.items()
-            if args.chip_name:
-                if args.chip_name in chip_config:
-                    selected_chips = [(args.chip_name, chip_config[args.chip_name])]
-                else:
-                    logger.fatal(f"Chip '{args.chip_name}' was not found in the chip configuration.")
-
+            selected_chips = select_chips(chip_config, args.chip_name, logger)
             for chip_name, chip_values in selected_chips:
                 if not isinstance(chip_values, dict):
                     continue
@@ -1007,13 +1107,7 @@ def main() -> int:
     chip_results: List[Dict[str, Any]] = []
     simulation_runtime_seconds = 0.0
     if isinstance(chip_config, dict):
-        selected_chips = chip_config.items()
-        if args.chip_name:
-            if args.chip_name in chip_config:
-                selected_chips = [(args.chip_name, chip_config[args.chip_name])]
-            else:
-                logger.fatal(f"Chip '{args.chip_name}' was not found in the chip configuration.")
-
+        selected_chips = select_chips(chip_config, args.chip_name, logger)
         for chip_name, chip_values in selected_chips:
             if not isinstance(chip_values, dict):
                 continue
@@ -1181,6 +1275,17 @@ def main() -> int:
     )
 
     update_history_results(output_dir, logger)
+
+    if args.lsf == 1:
+        logger.warning("LSF mode requested; submitting the workflow via bsub.")
+        submission_command = build_lsf_submission_command(args, output_dir, logger)
+        logger.warning(f"Submitting LSF command: {' '.join(submission_command)}")
+        completed = run_command(submission_command, cwd=repo_dir, logger=logger, allow_failure=True)
+        if completed.returncode == 0:
+            logger.warning("LSF job submitted successfully.")
+        else:
+            logger.error("LSF submission failed.")
+        return 0
 
     logger.warning("Smoke workflow completed successfully.")
     generate_smoke_results_html(output_dir, logger)
