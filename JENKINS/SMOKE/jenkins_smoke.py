@@ -31,6 +31,7 @@ from jenkins_smoke_html import (
     generate_smoke_results_html,
     generate_smoke_results_json,
 )
+from send_email_report import send_history_report_email
 
 DEFAULT_INPUT_DIR = Path("/Users/diya/Documents/JENKINS/SMOKE")
 DEFAULT_REPO_URL = "https://github.com/melonshreyas/gem5_Setup_R.git"
@@ -165,6 +166,43 @@ def parse_args() -> argparse.Namespace:
         "--dry_run",
         action="store_true",
         help="Generate the planned compile and simulation commands without running any subprocesses.",
+    )
+    parser.add_argument(
+        "--send-email",
+        action="store_true",
+        help="Send the generated history HTML report by email after the workflow completes.",
+    )
+    parser.add_argument(
+        "--smtp-server",
+        default=None,
+        help="SMTP server hostname for email delivery. Can also be supplied via SMTP_SERVER.",
+    )
+    parser.add_argument(
+        "--smtp-port",
+        type=int,
+        default=587,
+        help="SMTP server port for email delivery. Default: %(default)s",
+    )
+    parser.add_argument(
+        "--sender-email",
+        default=None,
+        help="Email address used to send the report. Can also be supplied via SENDER_EMAIL.",
+    )
+    parser.add_argument(
+        "--sender-password",
+        default=None,
+        help="Password or app-specific password for the sender account. Can also be supplied via SENDER_PASSWORD.",
+    )
+    parser.add_argument(
+        "--recipient-email",
+        action="append",
+        default=None,
+        help="Recipient email address for the report. Repeat the flag for multiple recipients. Can also be supplied via SMTP_RECIPIENTS.",
+    )
+    parser.add_argument(
+        "--email-subject",
+        default="gem5 Smoke Report",
+        help="Email subject for the sent report. Default: %(default)s",
     )
     return parser.parse_args()
 
@@ -1149,6 +1187,25 @@ def main() -> int:
     generate_smoke_results_json(output_dir, logger)
     generate_jenkins_history_smoke_results_html(DEFAULT_HISTORY_DIR, logger, limit=30)
     generate_jenkins_history_smoke_results_json(DEFAULT_HISTORY_DIR, logger, limit=30)
+
+    if args.send_email:
+        history_report_path = DEFAULT_HISTORY_DIR / "jenkins_history_smoke_results.html"
+        email_sent = send_history_report_email(
+            html_report_path=history_report_path,
+            to_addresses=args.recipient_email or ["shreyassbagi@gmail.com"],
+            smtp_server=args.smtp_server,
+            smtp_port=args.smtp_port,
+            sender_email=args.sender_email,
+            sender_password=args.sender_password,
+            subject=args.email_subject,
+        )
+        if email_sent:
+            logger.warning(f"Email sent successfully with attachment: {history_report_path}")
+        else:
+            logger.warning(
+                "Email delivery was not completed. Check SMTP settings, credentials, or recipient configuration."
+            )
+
     return 0
 
 
