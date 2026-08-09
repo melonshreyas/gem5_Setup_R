@@ -831,7 +831,7 @@ def select_chips(
     logger: SmokeLogger,
 ) -> List[tuple[str, Dict[str, Any]]]:
     """Select the requested chip entries from the configuration.
-    The workflow only processes explicitly named chips, which makes runs more predictable.
+    Passing ``ALL`` selects every chip entry from the configuration.
     """
     if not isinstance(chip_config, dict):
         return []
@@ -840,6 +840,14 @@ def select_chips(
     if not normalized_names:
         logger.fatal("No chip names were provided. Please pass one or more --chip-name values.")
         return []
+
+    if any(name.upper() == "ALL" for name in normalized_names):
+        selected_names = [name for name in chip_config.keys() if isinstance(chip_config[name], dict)]
+        if not selected_names:
+            logger.fatal("No chip entries were found in the chip configuration.")
+            return []
+        logger.warning(f"Selecting all chips from configuration: {selected_names}")
+        return [(name, chip_config[name]) for name in selected_names]
 
     selected: List[tuple[str, Dict[str, Any]]] = []
     for chip_name in normalized_names:
