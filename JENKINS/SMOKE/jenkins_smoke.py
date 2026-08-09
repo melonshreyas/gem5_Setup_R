@@ -42,7 +42,6 @@ COMPILE_ERROR_PATTERNS = (
     r"\bvariable length arrays?\b",
     r"\bclang extension\b",
     r"\bcheck failed.*python\.h\b",
-    r"\bNo such file or directory\b",
     r"\btraceback \(most recent call last\):",
 )
 STATS_METRIC_PATTERNS = {
@@ -235,6 +234,7 @@ def run_command(
         for line in process.stdout:
             output_lines.append(line)
             if log_file is not None:
+                log_file.parent.mkdir(parents=True, exist_ok=True)
                 with log_file.open("a", encoding="utf-8") as handle:
                     handle.write(line)
             if logger.verbose:
@@ -244,6 +244,7 @@ def run_command(
     combined_output = "".join(output_lines)
 
     if log_file is not None:
+        log_file.parent.mkdir(parents=True, exist_ok=True)
         with log_file.open("a", encoding="utf-8") as handle:
             handle.write(f"\nRETURN_CODE: {return_code}\n")
 
@@ -345,7 +346,7 @@ def read_stats_metrics(stats_path: Path) -> Dict[str, Any]:
 def analyze_compile_log(
     compile_log: Path, target: str, logger: SmokeLogger
 ) -> tuple[bool, Optional[str]]:
-    """Inspect the compile log for known failure patterns and the expected build target signal."""
+    """Inspect the compile log for known failure patterns and required link signal."""
     if not compile_log.exists():
         logger.error(f"Compile log was not created: {compile_log}")
         return False, "Compile log was not created"
@@ -360,12 +361,15 @@ def analyze_compile_log(
             )
             return False, f"Matched compile error pattern: {pattern}"
 
-    if target not in log_text:
-        logger.error(f"Compile log does not mention expected target {target}: {compile_log}")
-        return False, f"Missing expected build target signal: {target}"
+    link_pattern = rf"\[\s*LINK\]\s*->\s*ALL/{re.escape(target)}\b"
+    if not re.search(link_pattern, log_text):
+        logger.error(
+            f"Compile log does not contain required link marker for {target}: {compile_log}"
+        )
+        return False, f"Missing link marker: [    LINK]  -> ALL/{target}"
 
     logger.warning(f"Compile log indicates PASS for {target}: {compile_log}")
-    return True, f"Found expected build target signal: {target}"
+    return True, f"Found link marker: [    LINK]  -> ALL/{target}"
 
 
 def compile_gem5(
@@ -405,7 +409,7 @@ def compile_gem5(
         [
             "scons",
             f"build/ALL/{target}",
-            "-j4",
+            "-j20",
             "--ignore-style",
             "--install-hooks",
         ],
@@ -727,7 +731,7 @@ def build_compile_command(repo_dir: Path, build_type: str) -> List[str]:
     return [
         "scons",
         f"build/ALL/{target}",
-        "-j4",
+        "-j20",
         "--ignore-style",
         "--install-hooks",
     ]
