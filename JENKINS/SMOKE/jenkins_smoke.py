@@ -25,6 +25,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from jenkins_smoke_html import (
+    generate_jenkins_history_smoke_results_html,
+    generate_jenkins_history_smoke_results_json,
+    generate_smoke_results_html,
+    generate_smoke_results_json,
+)
+
 DEFAULT_INPUT_DIR = Path("/Users/diya/Documents/JENKINS/SMOKE")
 DEFAULT_REPO_URL = "https://github.com/melonshreyas/gem5_Setup_R.git"
 DEFAULT_HISTORY_DIR = Path("/Users/diya/Documents/JENKINS/HISTORY")
@@ -150,6 +157,11 @@ def parse_args() -> argparse.Namespace:
         help="Enable verbose debug logging.",
     )
     parser.add_argument(
+        "--skip_simulation",
+        action="store_true",
+        help="Skip the simulation phase and still generate summary, HTML, and JSON reports with default placeholder rows.",
+    )
+    parser.add_argument(
         "--dry_run",
         action="store_true",
         help="Generate the planned compile and simulation commands without running any subprocesses.",
@@ -272,7 +284,7 @@ def git_clone(repo_url: str, destination_dir: Path, branch: str, logger: SmokeLo
         logger.warning(f"Cloning repository into {repo_dir}")
         run_command(["git", "clone", "--recursive", repo_url, str(repo_dir)], cwd=destination_dir.parent, logger=logger)
     else:
-        logger.warning(f"Repository already exists at {repo_dir}; reusing it")
+        logger.warning(f"Repository already exists at {repo_dir}; git clone is done, reusing existing checkout")
         run_command(["git", "fetch", "--all", "--prune"], cwd=repo_dir, logger=logger, allow_failure=True)
 
     run_command(["git", "submodule", "update", "--init", "--recursive"], cwd=repo_dir, logger=logger, allow_failure=True)
@@ -971,7 +983,6 @@ def main() -> int:
             compile_dir.mkdir(parents=True, exist_ok=True)
             logger.warning(f"Preparing compile directory for {chip_name}: {compile_dir}")
             if args.skip_compilation:
-                logger.warning(f"Skipping simulation for {chip_name} because compilation was disabled.")
                 write_compilation_result(
                     compile_dir,
                     chip_name,
@@ -982,20 +993,31 @@ def main() -> int:
                     compile_reason,
                     logger,
                 )
-                chip_results.append(
-                    {
-                        "chip": chip_name,
-                        "status": "SKIP",
-                        "compile_status": "SKIP",
-                        "simulation_status": "SKIP",
-                        "reason": "Compilation disabled",
-                        "output_dir": str(output_dir / "simulation" / chip_name),
-                        "runtime_seconds": 0.0,
-                        "compile_log": str(compile_log),
-                        "binary_path": str(gem5_binary),
-                        "compile_directory": str(compile_dir),
-                    }
-                )
+                simulation_cases = expand_simulation_cases(chip_values)
+                logger.warning(f"Skipping simulation for {chip_name} because compilation was disabled.")
+                for case in simulation_cases:
+                    case_name = case["name"]
+                    case_config = case["config"]
+                    case_outdir = case_config.get("outdir") or case_name
+                    if not str(case_outdir).startswith("/"):
+                        resolved_outdir = output_dir / "RESULTS" / "simulation" / chip_name / case_name
+                    else:
+                        resolved_outdir = Path(str(case_outdir))
+                    chip_results.append(
+                        {
+                            "chip": chip_name,
+                            "case": case_name,
+                            "status": "SKIP",
+                            "compile_status": "SKIP",
+                            "simulation_status": "SKIP",
+                            "reason": "Compilation disabled",
+                            "output_dir": str(resolved_outdir),
+                            "runtime_seconds": 0.0,
+                            "compile_log": str(compile_log),
+                            "binary_path": str(gem5_binary),
+                            "compile_directory": str(compile_dir),
+                        }
+                    )
                 continue
 
             if not compile_success or not gem5_binary.exists():
@@ -1037,6 +1059,36 @@ def main() -> int:
                 logger,
             )
             simulation_cases = expand_simulation_cases(chip_values)
+            if args.skip_simulation:
+                logger.warning(f"Skipping simulation for {chip_name} because --skip_simulation was requested.")
+                for case in simulation_cases:
+                    case_name = case["name"]
+                    case_config = case["config"]
+                    case_outdir = case_config.get("outdir") or case_name
+                    if not str(case_outdir).startswith("/"):
+                        resolved_outdir = output_dir / "RESULTS" / "simulation" / chip_name / case_name
+                    else:
+                        resolved_outdir = Path(str(case_outdir))
+                    chip_results.append(
+                        {
+                            "chip": chip_name,
+                            "case": case_name,
+                            "status": "SKIP",
+                            "compile_status": "PASS" if compile_success else "FAIL",
+                            "simulation_status": "SKIP",
+                            "output_dir": str(resolved_outdir),
+                            "simulation_log": "N/A",
+                            "return_code": "N/A",
+                            "script": case_config.get("sim_script"),
+                            "runtime_seconds": 0.0,
+                            "stats_metrics": {"present": False},
+                            "compile_log": str(compile_log),
+                            "binary_path": str(gem5_binary),
+                            "compile_directory": str(compile_dir),
+                            "reason": "Simulation skipped by user",
+                        }
+                    )
+                continue
             for case in simulation_cases:
                 case_name = case["name"]
                 case_config = case["config"]
@@ -1093,6 +1145,10 @@ def main() -> int:
     update_history_results(output_dir, logger)
 
     logger.warning("Smoke workflow completed successfully.")
+    generate_smoke_results_html(output_dir, logger)
+    generate_smoke_results_json(output_dir, logger)
+    generate_jenkins_history_smoke_results_html(DEFAULT_HISTORY_DIR, logger, limit=30)
+    generate_jenkins_history_smoke_results_json(DEFAULT_HISTORY_DIR, logger, limit=30)
     return 0
 
 
