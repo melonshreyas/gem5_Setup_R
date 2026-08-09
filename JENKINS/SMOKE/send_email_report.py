@@ -12,7 +12,9 @@ from typing import Optional, Sequence
 
 
 def _normalize_recipients(recipients: Optional[Sequence[str] | str]) -> list[str]:
-    """Normalize recipient values from CLI arguments or environment variables."""
+    """Normalize recipient values from CLI arguments or environment variables.
+    This turns a list, comma-separated string, or empty input into a clean recipient list.
+    """
     if recipients is None:
         return []
     if isinstance(recipients, str):
@@ -37,7 +39,9 @@ def send_history_report_email(
     sender_password: Optional[str] = None,
     subject: str = "gem5 Smoke Report",
 ) -> bool:
-    """Send the provided HTML report as an email attachment."""
+    """Send the HTML report as an email attachment.
+    It builds an email message and attempts to deliver it through SMTP.
+    """
     report_path = Path(html_report_path).expanduser().resolve()
     if not report_path.exists():
         raise FileNotFoundError(f"Report file was not found: {report_path}")
@@ -85,7 +89,9 @@ def send_history_report_email(
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse command-line arguments for sending a report by email."""
+    """Parse the CLI options for the email helper.
+    This makes the SMTP target, credentials, and recipients configurable from the shell.
+    """
     parser = argparse.ArgumentParser(description="Send a generated smoketest HTML report by email.")
     parser.add_argument(
         "report_path",
@@ -108,7 +114,9 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
-    """Run the email helper from the command line."""
+    """Run the email helper from the command line.
+    It parses the arguments and sends the requested report if the SMTP settings work.
+    """
     args = parse_args()
     success = send_history_report_email(
         html_report_path=Path(args.report_path),

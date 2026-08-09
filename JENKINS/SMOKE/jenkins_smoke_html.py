@@ -19,7 +19,9 @@ __all__ = [
 
 
 def _parse_iso_timestamp(value: Optional[str]) -> float:
-    """Return a sortable timestamp value from an ISO-8601 string."""
+    """Convert an ISO timestamp into a sortable floating-point value.
+    This helps the report logic order runs chronologically.
+    """
     if not value:
         return 0.0
     try:
@@ -29,7 +31,9 @@ def _parse_iso_timestamp(value: Optional[str]) -> float:
 
 
 def _extract_stats_value(stats_metrics: Any, key: str) -> str:
-    """Return a stats metric value as a display string."""
+    """Return a stats metric as a display-friendly string.
+    Missing values are rendered as N/A so the report stays readable.
+    """
     if not isinstance(stats_metrics, dict) or not stats_metrics.get("present"):
         return "N/A"
     value = stats_metrics.get(key)
@@ -39,7 +43,9 @@ def _extract_stats_value(stats_metrics: Any, key: str) -> str:
 
 
 def _group_report_rows(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Group flat report rows by build and chip for rowspan rendering."""
+    """Group flat report rows by build and chip.
+    This prepares the data for HTML tables that use row spans for compact display.
+    """
     grouped_rows: List[Dict[str, Any]] = []
     current_group: Optional[Dict[str, Any]] = None
     current_key: Optional[tuple] = None
@@ -61,7 +67,9 @@ def _group_report_rows(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 
 def _collect_report_rows(summary: Dict[str, Any], build_number: str) -> List[Dict[str, Any]]:
-    """Flatten a smoke summary into per-chip/per-testcase table rows."""
+    """Flatten a smoke summary into per-chip and per-case report rows.
+    These rows are consumed by the HTML renderer to produce the final table.
+    """
     git_details = summary.get("git_details", {}) if isinstance(summary, dict) else {}
     compilation = summary.get("compilation", {}) if isinstance(summary, dict) else {}
     simulation = summary.get("simulation", {}) if isinstance(summary, dict) else {}
@@ -132,7 +140,9 @@ def _collect_report_rows(summary: Dict[str, Any], build_number: str) -> List[Dic
 
 
 def render_smoke_results_html(page_title: str, summary_fields: Dict[str, Any], rows: List[Dict[str, Any]]) -> str:
-  """Render the smoke report page with a detail block and an Excel-style table."""
+  """Render the smoke report HTML page.
+  It creates the summary details panel and the grouped table used for the report.
+  """
 
   def cell(value: Any) -> str:
     text = "" if value is None else str(value)
@@ -393,7 +403,9 @@ def render_smoke_results_html(page_title: str, summary_fields: Dict[str, Any], r
 
 
 def _build_report_payload(page_title: str, summary_fields: Dict[str, Any], rows: List[Dict[str, Any]]) -> Dict[str, Any]:
-  """Build a JSON-friendly representation of the rendered report."""
+  """Build a JSON-friendly representation of the rendered report.
+  This packages the report title, metadata, and rows into a structure for export.
+  """
   return {
     "page_title": page_title,
     "generated_at": datetime.now().isoformat(),
@@ -403,7 +415,9 @@ def _build_report_payload(page_title: str, summary_fields: Dict[str, Any], rows:
 
 
 def generate_smoke_results_json(output_dir: Path, logger: Any) -> None:
-  """Generate RESULTS/smoke_results.json for the latest run directory."""
+  """Generate the JSON smoke report for the latest run directory.
+  It writes the structured run summary and per-case rows to RESULTS/smoke_results.json.
+  """
   summary_path = output_dir / "RESULTS" / "general_results.json"
   if not summary_path.exists():
     logger.warning(f"No general results found for JSON report: {summary_path}")
@@ -430,7 +444,9 @@ def generate_smoke_results_json(output_dir: Path, logger: Any) -> None:
 
 
 def generate_smoke_results_html(output_dir: Path, logger: Any) -> None:
-    """Generate RESULTS/smoke_results.html for the latest run directory."""
+    """Generate the HTML smoke report for the latest run directory.
+    It reads the general summary and writes a readable report page to disk.
+    """
     summary_path = output_dir / "RESULTS" / "general_results.json"
     if not summary_path.exists():
         logger.warning(f"No general results found for HTML report: {summary_path}")
@@ -459,7 +475,9 @@ def generate_smoke_results_html(output_dir: Path, logger: Any) -> None:
 
 
 def generate_jenkins_history_smoke_results_html(history_dir: Path, logger: Any, limit: int = 30) -> None:
-    """Generate the latest 30 history entries as jenkins_history_smoke_results.html."""
+    """Generate the HTML history report from recent smoke runs.
+    It writes the latest build snapshots into jenkins_history_smoke_results.html.
+    """
     history_path = history_dir / "history_results.json"
     if not history_path.exists():
         logger.warning(f"No history file found for HTML report: {history_path}")
@@ -526,7 +544,9 @@ def generate_jenkins_history_smoke_results_html(history_dir: Path, logger: Any, 
 
 
 def generate_jenkins_history_smoke_results_json(history_dir: Path, logger: Any, limit: int = 30) -> None:
-    """Generate the latest 30 history entries as jenkins_history_smoke_results.json."""
+    """Generate the JSON history report from recent smoke runs.
+    It exports the latest history rows in a machine-readable format.
+    """
     history_path = history_dir / "history_results.json"
     if not history_path.exists():
         logger.warning(f"No history file found for JSON report: {history_path}")

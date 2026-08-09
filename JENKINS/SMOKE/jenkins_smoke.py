@@ -67,32 +67,48 @@ class SmokeLogger:
     """Simple UVM-style logger with WARNING, DEBUG, ERROR, and FATAL helpers."""
 
     def __init__(self, verbose: bool = False) -> None:
+        """Initialize the logger with optional verbose mode.
+        This keeps the workflow output readable while enabling extra detail when requested.
+        """
         self.verbose = verbose
 
     def _emit(self, level: str, message: str) -> None:
+        """Emit a log line with the requested severity.
+        This is the shared output path used by the other logging helpers.
+        """
         print(f"[{level}] {message}")
 
     def warning(self, message: str) -> None:
-        """Log a warning-level message."""
+        """Log a warning-level message.
+        Warnings highlight important but non-fatal workflow conditions.
+        """
         self._emit("WARNING", message)
 
     def debug(self, message: str) -> None:
-        """Log a debug message when verbose mode is enabled."""
+        """Log a debug message when verbose mode is enabled.
+        These messages are only printed when the user asks for verbose output.
+        """
         if self.verbose:
             self._emit("DEBUG", message)
 
     def error(self, message: str) -> None:
-        """Log an error-level message."""
+        """Log an error-level message.
+        Errors indicate a step failed but the script may continue to report the state.
+        """
         self._emit("ERROR", message)
 
     def fatal(self, message: str) -> None:
-        """Log a fatal message and stop the workflow with an exception."""
+        """Log a fatal message and stop the workflow with an exception.
+        This is used when the run cannot continue safely.
+        """
         self._emit("FATAL", message)
         raise RuntimeError(message)
 
 
 def parse_bool(value: Any) -> bool:
-    """Parse a boolean-like CLI value from strings such as true/false or 1/0."""
+    """Parse a boolean-like CLI value.
+    This accepts common forms such as true/false and 1/0 from the command line.
+    """
     if isinstance(value, bool):
         return value
     if value is None:
@@ -107,7 +123,9 @@ def parse_bool(value: Any) -> bool:
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse command-line arguments for the smoke workflow."""
+    """Parse the command-line options for the smoke workflow.
+    This makes the build, run, reporting, and email behavior configurable from the shell.
+    """
     parser = argparse.ArgumentParser(
         description="Run a gem5 smoke workflow with repository clone, compile, and simulation steps."
     )
@@ -231,7 +249,9 @@ def parse_args() -> argparse.Namespace:
 
 
 def build_lsf_submission_command(args: argparse.Namespace, output_dir: Path, logger: SmokeLogger) -> List[str]:
-    """Create a bsub command that runs the smoke workflow in an LSF job."""
+    """Create an LSF submission command for the workflow.
+    This preserves the selected options when the run is forwarded to bsub.
+    """
     command = [
         "bsub",
         "-q",
@@ -286,7 +306,9 @@ def build_lsf_submission_command(args: argparse.Namespace, output_dir: Path, log
 
 
 def resolve_output_dir(input_dir: Path, requested_output_dir: Optional[str]) -> Path:
-    """Resolve the output directory and auto-increment the default build folder."""
+    """Resolve the output directory for the current run.
+    When no path is provided, it creates a numbered smoke-build directory automatically.
+    """
     if requested_output_dir:
         return Path(requested_output_dir).expanduser().resolve()
 
@@ -301,7 +323,9 @@ def resolve_output_dir(input_dir: Path, requested_output_dir: Optional[str]) -> 
 
 
 def load_chip_configuration(path_str: Optional[str], logger: SmokeLogger) -> Dict[str, Any]:
-    """Load and validate the optional chip configuration from a JSON file."""
+    """Load the optional chip configuration from JSON.
+    It validates the file and returns the structured chip settings for the workflow.
+    """
     if not path_str:
         logger.debug("No chip configuration file was provided.")
         return {}
@@ -331,7 +355,9 @@ def run_command(
     log_file: Optional[Path] = None,
     input_text: Optional[str] = None,
 ) -> subprocess.CompletedProcess[str]:
-    """Run a shell command and stream its output to a log file while it executes."""
+    """Run a subprocess and capture its output.
+    The command stream is logged to disk so failures are easier to inspect later.
+    """
     logger.debug(f"Running command: {' '.join(command)}")
 
     if log_file is not None:
@@ -392,7 +418,9 @@ def run_command(
 
 
 def git_clone(repo_url: str, destination_dir: Path, branch: str, logger: SmokeLogger) -> Dict[str, Any]:
-    """Clone the repository into the provided output directory and collect git metadata."""
+    """Clone or reuse the repository and collect git metadata.
+    This ensures the workflow runs against the requested checkout and captures commit details.
+    """
     destination_dir.mkdir(parents=True, exist_ok=True)
     repo_dir = destination_dir
 
@@ -427,7 +455,9 @@ def git_clone(repo_url: str, destination_dir: Path, branch: str, logger: SmokeLo
 
 
 def should_skip_build(repo_dir: Path, gem5_binary: Path, logger: SmokeLogger) -> bool:
-    """Return True when the existing binary can be reused because relevant source files are unchanged."""
+    """Decide whether a cached gem5 build can be reused.
+    If the sources are unchanged, the expensive compile step can be skipped.
+    """
     if not gem5_binary.exists():
         return False
 
@@ -451,7 +481,9 @@ def should_skip_build(repo_dir: Path, gem5_binary: Path, logger: SmokeLogger) ->
 
 
 def read_stats_metrics(stats_path: Path) -> Dict[str, Any]:
-    """Extract a small activity-monitor payload from a gem5 stats.txt file."""
+    """Extract useful metrics from a gem5 stats file.
+    These values are later included in the JSON and HTML summaries.
+    """
     if not stats_path.exists():
         return {"stats_path": str(stats_path), "present": False}
 
@@ -474,7 +506,9 @@ def read_stats_metrics(stats_path: Path) -> Dict[str, Any]:
 def analyze_compile_log(
     compile_log: Path, target: str, logger: SmokeLogger
 ) -> tuple[bool, Optional[str]]:
-    """Inspect the compile log for known failure patterns and required link signal."""
+    """Inspect the compile log for failure patterns.
+    It checks whether the build passed and whether the expected gem5 link step completed.
+    """
     if not compile_log.exists():
         logger.error(f"Compile log was not created: {compile_log}")
         return False, "Compile log was not created"
@@ -506,7 +540,9 @@ def compile_gem5(
     logger: SmokeLogger,
     build_type: str = "opt",
 ) -> tuple[Path, bool, Path, float, str]:
-    """Compile gem5 once into a shared build directory under the output path when needed."""
+    """Compile gem5 into the shared smoke-build output directory.
+    The result is copied into the run-specific build tree and logged for reporting.
+    """
     results_dir = output_dir / "RESULTS"
     build_dir = output_dir / "build"
     build_dir.mkdir(parents=True, exist_ok=True)
@@ -586,7 +622,9 @@ def write_compilation_result(
     reason: Optional[str],
     logger: SmokeLogger,
 ) -> None:
-    """Write a JSON compilation result report into the chip-specific compile directory."""
+    """Write a per-chip compilation report to JSON.
+    This records whether the build passed, where the binary lives, and the log path.
+    """
     compile_dir.mkdir(parents=True, exist_ok=True)
     result_path = compile_dir / "results_compilation.json"
     log_copy_path = compile_dir / "compile.log"
@@ -632,7 +670,9 @@ def write_general_summary(
     compilation_runtime_seconds: float,
     simulation_runtime_seconds: float,
 ) -> None:
-    """Write a consolidated JSON summary with git, compile, simulation, and runtime details."""
+    """Write the full run summary to JSON.
+    It consolidates git, compile, simulation, and timing information in one file.
+    """
     summary_path = output_dir / "RESULTS" / "general_results.json"
     chipwise_payload: Dict[str, Any] = {}
     total_testcases = 0
@@ -714,7 +754,9 @@ def write_general_summary(
 
 
 def update_history_results(output_dir: Path, logger: SmokeLogger) -> None:
-    """Append the current run summary into the persistent history results file."""
+    """Append the current run into the persistent history store.
+    This keeps a growing JSON history of smoke results for later reporting.
+    """
     history_dir = DEFAULT_HISTORY_DIR
     history_dir.mkdir(parents=True, exist_ok=True)
     history_path = history_dir / "history_results.json"
@@ -788,11 +830,8 @@ def select_chips(
     chip_names: Optional[List[str]],
     logger: SmokeLogger,
 ) -> List[tuple[str, Dict[str, Any]]]:
-    """Return the configured chips to process.
-
-    By design, this now requires an explicit chip selection. To re-enable the
-    previous behavior of running every chip when no filter is given, replace
-    the empty-selection branch with the full chip list.
+    """Select the requested chip entries from the configuration.
+    The workflow only processes explicitly named chips, which makes runs more predictable.
     """
     if not isinstance(chip_config, dict):
         return []
@@ -812,7 +851,9 @@ def select_chips(
 
 
 def expand_simulation_cases(chip_config: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """Return one or more simulation cases from the chip configuration."""
+    """Expand the chip configuration into individual simulation cases.
+    Each named test becomes one runnable case for the workflow.
+    """
     simulate_config = chip_config.get("simulate", {})
     if not isinstance(simulate_config, dict):
         return [{"name": "default", "config": {}}]
@@ -840,7 +881,9 @@ def build_simulation_command(
     chip_config: Dict[str, Any],
     case_name: str,
 ) -> List[str]:
-    """Build the gem5 command line for a chip simulation case."""
+    """Build a gem5 command line for one simulation case.
+    It assembles the binary, script path, and output directory arguments for the run.
+    """
     command: List[str] = [str(gem5_binary)]
     command.extend(chip_config.get("gem5_args", []))
 
@@ -882,7 +925,9 @@ def build_simulation_command(
 
 
 def build_compile_command(repo_dir: Path, build_type: str) -> List[str]:
-    """Build the gem5 compile command for a given build type."""
+    """Build the compile command for the requested gem5 build type.
+    This is used by the dry-run mode to show the command that would be executed.
+    """
     target = "gem5.opt" if build_type == "opt" else "gem5.debug"
     return [
         "scons",
@@ -901,7 +946,9 @@ def write_dry_run_summary(
     planned_compile_command: List[str],
     planned_simulation_commands: List[Dict[str, Any]],
 ) -> None:
-    """Write a JSON summary describing the commands that would have been executed."""
+    """Write the planned command list for a dry run.
+    This makes the workflow easier to inspect before any real build or simulation starts.
+    """
     summary_path = output_dir / "RESULTS" / "dry_run_results.json"
     payload = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -928,7 +975,9 @@ def simulate_gem5(
     chip_config: Dict[str, Any],
     case_name: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Run a smoke simulation for one chip and direct result files into a chip-specific directory."""
+    """Run one chip simulation case and capture its results.
+    The outputs are written under the chip-specific results directory for reporting.
+    """
     case_name = case_name or chip_config.get("case_name", "default")
     chip_dir = output_dir / "RESULTS" / "simulation" / chip_name / case_name
     chip_dir.mkdir(parents=True, exist_ok=True)
@@ -1023,7 +1072,9 @@ def simulate_gem5(
 
 
 def main() -> int:
-    """Entry point for the smoke workflow."""
+    """Coordinate the full smoke workflow.
+    This is the entry point that parses options, builds, runs, and reports the results.
+    """
     args = parse_args()
     logger = SmokeLogger(verbose=args.verbose)
 
