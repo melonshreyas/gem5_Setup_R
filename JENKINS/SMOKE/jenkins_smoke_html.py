@@ -447,22 +447,10 @@ def generate_smoke_results_html(output_dir: Path, logger: Any) -> None:
         "Commit Message": git_details.get("commit_message", "N/A"),
         "User Name": git_details.get("pushed_by", "N/A"),
         "Git Files Change": ", ".join(git_details.get("changed_files", [])) if isinstance(git_details.get("changed_files", []), list) and git_details.get("changed_files", []) else "N/A",
-      "Output Dir": summary.get("output_dir", "N/A"),
-      "Binary Path": summary.get("compilation", {}).get("binary_path", "N/A") if isinstance(summary.get("compilation", {}), dict) else "N/A",
-      "Compile Log": summary.get("compilation", {}).get("log_file", "N/A") if isinstance(summary.get("compilation", {}), dict) else "N/A",
-      "Simulation Log": ", ".join(
-        sorted(
-          {
-            str(testcase.get("simulation_log", "N/A"))
-            for chip in (summary.get("simulation", {}) or {}).get("chips", {}).values()
-            if isinstance(chip, dict)
-            for testcase in (chip.get("testcases", {}) or {}).values()
-            if isinstance(testcase, dict)
-          }
-        )
-      )
-      if isinstance(summary.get("simulation", {}), dict)
-      else "N/A",
+        "Result Folder": str(output_dir / "RESULTS"),
+        "Output Dir": summary.get("output_dir", "N/A"),
+        "Binary Path": summary.get("compilation", {}).get("binary_path", "N/A") if isinstance(summary.get("compilation", {}), dict) else "N/A",
+        "Compile Log": summary.get("compilation", {}).get("log_file", "N/A") if isinstance(summary.get("compilation", {}), dict) else "N/A",
     }
     html_text = render_smoke_results_html("Smoke Results", summary_fields, rows)
     report_path = output_dir / "RESULTS" / "smoke_results.html"
@@ -502,10 +490,31 @@ def generate_jenkins_history_smoke_results_html(history_dir: Path, logger: Any, 
     )
     selected_rows = flattened_rows[:limit]
 
+    latest_run_summary: Optional[Dict[str, Any]] = None
+    latest_run_payload: Optional[Dict[str, Any]] = None
+    if isinstance(runs, dict):
+        for build_number, run_payload in runs.items():
+            if isinstance(run_payload, dict):
+                summary = run_payload.get("general_results", {}) if isinstance(run_payload.get("general_results", {}), dict) else {}
+                if isinstance(summary, dict) and summary:
+                    latest_run_summary = summary
+                    latest_run_payload = run_payload
+                    break
+
+    git_details = latest_run_summary.get("git_details", {}) if isinstance(latest_run_summary, dict) else {}
+    latest_output_dir = latest_run_payload.get("output_dir", "N/A") if isinstance(latest_run_payload, dict) else "N/A"
     summary_fields = {
         "History File": str(history_path),
         "Latest Build Number": history_data.get("latest_build_number", "N/A") if isinstance(history_data, dict) else "N/A",
-        "Latest Output Dir": history_data.get("latest_output_dir", "N/A") if isinstance(history_data, dict) else "N/A",
+        "Date": latest_run_summary.get("timestamp", "N/A") if isinstance(latest_run_summary, dict) else "N/A",
+        "Commit ID": git_details.get("commit_id", "N/A"),
+        "Commit Message": git_details.get("commit_message", "N/A"),
+        "User Name": git_details.get("pushed_by", "N/A"),
+        "Git Files Change": ", ".join(git_details.get("changed_files", [])) if isinstance(git_details.get("changed_files", []), list) and git_details.get("changed_files", []) else "N/A",
+        "Result Folder": str(Path(str(latest_output_dir)) / "RESULTS") if latest_output_dir != "N/A" else "N/A",
+        "Output Dir": latest_output_dir,
+        "Binary Path": latest_run_summary.get("compilation", {}).get("binary_path", "N/A") if isinstance(latest_run_summary, dict) and isinstance(latest_run_summary.get("compilation", {}), dict) else "N/A",
+        "Compile Log": latest_run_summary.get("compilation", {}).get("log_file", "N/A") if isinstance(latest_run_summary, dict) and isinstance(latest_run_summary.get("compilation", {}), dict) else "N/A",
         "Total Runs": history_data.get("total_runs", 0) if isinstance(history_data, dict) else 0,
         "Rows Included": len(selected_rows),
     }
@@ -548,10 +557,31 @@ def generate_jenkins_history_smoke_results_json(history_dir: Path, logger: Any, 
     )
     selected_rows = flattened_rows[:limit]
 
+    latest_run_summary: Optional[Dict[str, Any]] = None
+    latest_run_payload: Optional[Dict[str, Any]] = None
+    if isinstance(runs, dict):
+        for build_number, run_payload in runs.items():
+            if isinstance(run_payload, dict):
+                summary = run_payload.get("general_results", {}) if isinstance(run_payload.get("general_results", {}), dict) else {}
+                if isinstance(summary, dict) and summary:
+                    latest_run_summary = summary
+                    latest_run_payload = run_payload
+                    break
+
+    git_details = latest_run_summary.get("git_details", {}) if isinstance(latest_run_summary, dict) else {}
+    latest_output_dir = latest_run_payload.get("output_dir", "N/A") if isinstance(latest_run_payload, dict) else "N/A"
     summary_fields = {
         "History File": str(history_path),
         "Latest Build Number": history_data.get("latest_build_number", "N/A") if isinstance(history_data, dict) else "N/A",
-        "Latest Output Dir": history_data.get("latest_output_dir", "N/A") if isinstance(history_data, dict) else "N/A",
+        "Date": latest_run_summary.get("timestamp", "N/A") if isinstance(latest_run_summary, dict) else "N/A",
+        "Commit ID": git_details.get("commit_id", "N/A"),
+        "Commit Message": git_details.get("commit_message", "N/A"),
+        "User Name": git_details.get("pushed_by", "N/A"),
+        "Git Files Change": ", ".join(git_details.get("changed_files", [])) if isinstance(git_details.get("changed_files", []), list) and git_details.get("changed_files", []) else "N/A",
+        "Result Folder": str(Path(str(latest_output_dir)) / "RESULTS") if latest_output_dir != "N/A" else "N/A",
+        "Output Dir": latest_output_dir,
+        "Binary Path": latest_run_summary.get("compilation", {}).get("binary_path", "N/A") if isinstance(latest_run_summary, dict) and isinstance(latest_run_summary.get("compilation", {}), dict) else "N/A",
+        "Compile Log": latest_run_summary.get("compilation", {}).get("log_file", "N/A") if isinstance(latest_run_summary, dict) and isinstance(latest_run_summary.get("compilation", {}), dict) else "N/A",
         "Total Runs": history_data.get("total_runs", 0) if isinstance(history_data, dict) else 0,
         "Rows Included": len(selected_rows),
     }
