@@ -13,8 +13,8 @@ pipeline {
         )
         string(
             name: 'INPUT_DIR',
-            defaultValue: '/Users/diya/Documents/JENKINS/SMOKE',
-            description: 'Directory that contains the smoke workflow inputs and working files.'
+            defaultValue: '',
+            description: 'Root directory of the gem5 repository checkout. Leave empty to use the Jenkins workspace.'
         )
         string(
             name: 'OUTPUT_DIR',
@@ -23,8 +23,8 @@ pipeline {
         )
         string(
             name: 'CHIP_CONFIGURATION',
-            defaultValue: 'JENKINS/SMOKE/chip_configuration.json',
-            description: 'Path to the chip configuration JSON file.'
+            defaultValue: '',
+            description: 'Absolute path to chip_configuration.json. Leave empty to use JENKINS/SMOKE/chip_configuration.json inside the workspace.'
         )
         choice(
             name: 'COMPILE_TARGET',
@@ -62,7 +62,7 @@ pipeline {
         PYTHON_BIN = 'python3'
         REPO_ROOT = "${env.WORKSPACE}"
         SMOKE_REPO_URL = 'https://github.com/melonshreyas/gem5_Setup_R.git'
-        SMOKE_INPUT_DIR = '/Users/diya/Documents/JENKINS/SMOKE'
+        SMOKE_INPUT_DIR = "${env.WORKSPACE}"
         SMOKE_OUTPUT_DIR = "/Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_${env.BUILD_NUMBER}"
         SMOKE_HISTORY_DIR = '/Users/diya/Documents/JENKINS/HISTORY'
         SMOKE_CONFIG = "${env.WORKSPACE}/JENKINS/SMOKE/chip_configuration.json"
@@ -139,7 +139,11 @@ pipeline {
                     echo '[Pipeline] Preparing smoke workflow arguments.'
                     def cliArgs = []
                     def inputDir = params.INPUT_DIR?.trim() ? params.INPUT_DIR : env.SMOKE_INPUT_DIR
-                    def chipConfig = params.CHIP_CONFIGURATION?.trim() ? params.CHIP_CONFIGURATION : env.SMOKE_CONFIG
+                    // Always resolve chip config to an absolute path.
+                    def chipConfigRaw = params.CHIP_CONFIGURATION?.trim() ?: ''
+                    def chipConfig = chipConfigRaw
+                        ? (chipConfigRaw.startsWith('/') ? chipConfigRaw : "${env.WORKSPACE}/${chipConfigRaw}")
+                        : env.SMOKE_CONFIG
                     def outputDir = params.OUTPUT_DIR?.trim() ? params.OUTPUT_DIR : env.SMOKE_OUTPUT_DIR
                     def smokeScript = env.SMOKE_SCRIPT ?: "${env.WORKSPACE}/JENKINS/SMOKE/jenkins_smoke.py"
 
