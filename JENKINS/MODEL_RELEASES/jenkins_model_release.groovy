@@ -45,6 +45,44 @@ pipeline {
     }
 
     stages {
+        stage('INITIALIZE_PARAMETERS') {
+            steps {
+                script {
+                    properties([
+                        parameters([
+                            choice(
+                                name: 'MODEL_UNIT_NAME',
+                                choices: [
+                                    'IFU', 'BPU', 'IDU', 'DISPATCH_UNIT', 'RENAME_UNIT', 'ISSUE_QUEUE',
+                                    'COMPLETION_UNIT', 'FXU', 'ALU', 'FPU', 'VSX', 'CRU', 'LSU',
+                                    'EA_GENERATION', 'L1_ICACHE', 'L1_DCACHE', 'L2_CACHE', 'DTLB',
+                                    'PREFETCH_ENGINE', 'MEMORY_CONTROLLER', 'COHERENCE_ENGINE',
+                                    'NEST_INTERCONNECT', 'PCIe_CONTROLLER', 'CAPI_INTERFACE',
+                                    'NVLINK_INTERFACE', 'SMT_SCHEDULER'
+                                ],
+                                description: 'Required POWER9 pipeline/model unit.'
+                            ),
+                            string(name: 'BRANCH', defaultValue: 'stable', description: 'Required Git branch to clone.'),
+                            choice(name: 'COMPILE_TARGET', choices: ['opt', 'debug'], description: 'gem5 binary to compile.'),
+                            choice(name: 'CHIP_NAME', choices: ['ALL', 'CHIP_1', 'CHIP_2', 'CHIP_3'], description: 'Optional chip filter. ALL selects every configured chip.'),
+                            string(name: 'TESTCASE', defaultValue: 'ALL', description: 'Optional comma-separated testcase filter.'),
+                            string(name: 'CHIP_CONFIGURATION', defaultValue: '', description: 'Optional chip_configuration.json path.'),
+                            booleanParam(name: 'DRY_RUN', defaultValue: false, description: 'Print and archive the release plan without executing it.'),
+                            booleanParam(name: 'SEND_EMAIL', defaultValue: false, description: 'Send the unit/version HTML release report by email.'),
+                            string(name: 'SMTP_SERVER', defaultValue: '', description: 'SMTP server hostname.'),
+                            string(name: 'SENDER_EMAIL', defaultValue: '', description: 'Sender email address.'),
+                            password(name: 'SENDER_PASSWORD', defaultValue: '', description: 'SMTP password or app password.'),
+                            text(name: 'RECIPIENT_EMAILS', defaultValue: '', description: 'Comma-separated recipient email addresses.'),
+                            text(name: 'SUMMARY', defaultValue: '', description: 'Required release summary.'),
+                            text(name: 'FIXES', defaultValue: '', description: 'Required list of fixes and changes.'),
+                            string(name: 'REPO_URL', defaultValue: 'https://github.com/melonshreyas/gem5_Setup_R.git', description: 'Repository to clone for the release.')
+                        ])
+                    ])
+                    echo '[RELEASE] Build parameters initialized/refreshed.'
+                }
+            }
+        }
+
         stage('CHECK_REQUIRED_INPUTS') {
             steps {
                 script {
