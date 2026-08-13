@@ -63,12 +63,12 @@ pipeline {
         PATH = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${env.PATH}"
         PYTHON_BIN = 'python3'
         REPO_ROOT = "${env.WORKSPACE}"
-        SMOKE_REPO_URL = 'https://github.com/melonshreyas/gem5_Setup_R.git'
-        SMOKE_INPUT_DIR = "${env.WORKSPACE}"
-        SMOKE_OUTPUT_DIR = "/Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_${env.BUILD_NUMBER}"
-        SMOKE_HISTORY_DIR = '/Users/diya/Documents/JENKINS/HISTORY/SMOKE'
-        SMOKE_CONFIG = "${env.WORKSPACE}/JENKINS/SMOKE/chip_configuration.json"
-        SMOKE_SCRIPT = "${env.WORKSPACE}/JENKINS/SMOKE/jenkins_smoke.py"
+        WEEKLY_REPO_URL = 'https://github.com/melonshreyas/gem5_Setup_R.git'
+        WEEKLY_INPUT_DIR = "${env.WORKSPACE}"
+        WEEKLY_OUTPUT_DIR = "/Users/diya/Documents/JENKINS/WEEKLY_REGRESSION/WEEKLY_BUILD_${env.BUILD_NUMBER}"
+        WEEKLY_HISTORY_DIR = '/Users/diya/Documents/JENKINS/HISTORY/WEEKLY_REGRESSION'
+        WEEKLY_CONFIG = "${env.WORKSPACE}/JENKINS/SMOKE/chip_configuration.json"
+        WEEKLY_SCRIPT = "${env.WORKSPACE}/JENKINS/SMOKE/jenkins_weekly.py"
         BUILD_TAG_VALUE = "${env.BUILD_TAG}"
         BUILD_ID_VALUE = "${env.BUILD_ID}"
         JOB_NAME_VALUE = "${env.JOB_NAME}"
@@ -115,13 +115,13 @@ pipeline {
                     set -e
                     echo "[Shell] Python executable: ${PYTHON_BIN}"
                     ${PYTHON_BIN} --version
-                    echo "[Shell] Creating output directory: $SMOKE_OUTPUT_DIR"
-                    mkdir -p "$SMOKE_OUTPUT_DIR"
+                    echo "[Shell] Creating output directory: $WEEKLY_OUTPUT_DIR"
+                    mkdir -p "$WEEKLY_OUTPUT_DIR"
                     if [ -d "$WORKSPACE/.git" ]; then
                         echo "[Shell] Workspace already contains a Git checkout."
                     else
-                        echo "[Shell] Cloning repository: $SMOKE_REPO_URL"
-                        git clone --recursive "$SMOKE_REPO_URL" "$WORKSPACE"
+                        echo "[Shell] Cloning repository: $WEEKLY_REPO_URL"
+                        git clone --recursive "$WEEKLY_REPO_URL" "$WORKSPACE"
                     fi
                     cd "$WORKSPACE"
                     echo "[Shell] Updating submodules."
@@ -139,14 +139,14 @@ pipeline {
                 script {
                     echo '[Pipeline] Preparing smoke workflow arguments.'
                     def cliArgs = []
-                    def inputDir = params.INPUT_DIR?.trim() ? params.INPUT_DIR : env.SMOKE_INPUT_DIR
+                    def inputDir = params.INPUT_DIR?.trim() ? params.INPUT_DIR : env.WEEKLY_INPUT_DIR
                     // Always resolve chip config to an absolute path.
                     def chipConfigRaw = params.CHIP_CONFIGURATION?.trim() ?: ''
                     def chipConfig = chipConfigRaw
                         ? (chipConfigRaw.startsWith('/') ? chipConfigRaw : "${env.WORKSPACE}/${chipConfigRaw}")
-                        : env.SMOKE_CONFIG
-                    def outputDir = params.OUTPUT_DIR?.trim() ? params.OUTPUT_DIR : env.SMOKE_OUTPUT_DIR
-                    def smokeScript = env.SMOKE_SCRIPT ?: "${env.WORKSPACE}/JENKINS/SMOKE/jenkins_smoke.py"
+                        : env.WEEKLY_CONFIG
+                    def outputDir = params.OUTPUT_DIR?.trim() ? params.OUTPUT_DIR : env.WEEKLY_OUTPUT_DIR
+                    def smokeScript = env.WEEKLY_SCRIPT ?: "${env.WORKSPACE}/JENKINS/SMOKE/jenkins_weekly.py"
 
                     echo "[Pipeline] Input directory: ${inputDir}"
                     echo "[Pipeline] Chip configuration: ${chipConfig}"
@@ -235,8 +235,8 @@ pipeline {
                 allowMissing: true,
                 alwaysLinkToLastBuild: true,
                 keepAll: true,
-                reportDir: '/Users/diya/Documents/JENKINS/HISTORY/SMOKE',
-                reportFiles: 'jenkins_history_smoke_results.html',
+                reportDir: '/Users/diya/Documents/JENKINS/HISTORY/WEEKLY_REGRESSION',
+                reportFiles: 'jenkins_history_weekly_results.html',
                 reportName: 'Smoke History Report'
             ])
         }

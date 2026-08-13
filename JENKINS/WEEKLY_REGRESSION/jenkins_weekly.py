@@ -25,17 +25,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from jenkins_smoke_html import (
-    generate_jenkins_history_smoke_results_html,
-    generate_jenkins_history_smoke_results_json,
-    generate_smoke_results_html,
-    generate_smoke_results_json,
+from jenkins_weekly_html import (
+    generate_jenkins_history_weekly_results_html,
+    generate_jenkins_history_weekly_results_json,
+    generate_weekly_results_html,
+    generate_weekly_results_json,
 )
 from send_email_report import send_history_report_email
 
 DEFAULT_INPUT_DIR = Path("/Users/diya/Documents/JENKINS/SMOKE")
 DEFAULT_REPO_URL = "https://github.com/melonshreyas/gem5_Setup_R.git"
-DEFAULT_HISTORY_DIR = Path("/Users/diya/Documents/JENKINS/HISTORY/SMOKE")
+DEFAULT_HISTORY_DIR = Path("/Users/diya/Documents/JENKINS/HISTORY/WEEKLY_REGRESSION")
 COMPILE_ERROR_PATTERNS = (
     r"\berror:\s+",
     r"\bfatal error:\s+",
@@ -137,7 +137,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-dir",
         default=None,
-        help="Directory used for compilation and simulation outputs. Defaults to a new SMOKE_BUILD_<NUM> folder under the input directory.",
+        help="Directory used for compilation and simulation outputs. Defaults to a new WEEKLY_BUILD_<NUM> folder under the input directory.",
     )
     parser.add_argument(
         "--branch",
@@ -316,7 +316,7 @@ def resolve_output_dir(input_dir: Path, requested_output_dir: Optional[str]) -> 
     base_dir.mkdir(parents=True, exist_ok=True)
     index = 1
     while True:
-        candidate = base_dir / f"SMOKE_BUILD_{index}"
+        candidate = base_dir / f"WEEKLY_BUILD_{index}"
         if not candidate.exists():
             return candidate
         index += 1
@@ -1347,13 +1347,13 @@ def main() -> int:
         return 0
 
     logger.warning("Smoke workflow completed successfully.")
-    generate_smoke_results_html(output_dir, logger)
-    generate_smoke_results_json(output_dir, logger)
-    generate_jenkins_history_smoke_results_html(DEFAULT_HISTORY_DIR, logger, limit=30)
-    generate_jenkins_history_smoke_results_json(DEFAULT_HISTORY_DIR, logger, limit=30)
+    generate_weekly_results_html(output_dir, logger)
+    generate_weekly_results_json(output_dir, logger)
+    generate_jenkins_history_weekly_results_html(DEFAULT_HISTORY_DIR, logger, limit=30)
+    generate_jenkins_history_weekly_results_json(DEFAULT_HISTORY_DIR, logger, limit=30)
 
     if args.send_email:
-        history_report_path = DEFAULT_HISTORY_DIR / "jenkins_history_smoke_results.html"
+        history_report_path = DEFAULT_HISTORY_DIR / "jenkins_history_weekly_results.html"
         email_sent = send_history_report_email(
             html_report_path=history_report_path,
             to_addresses=args.recipient_email or ["shreyassbagi@gmail.com"],
