@@ -1,0 +1,190 @@
+Started by user SHREYAS S BAGI
+[Pipeline] Start of Pipeline
+[Pipeline] node
+Running on Jenkins in /Users/diya/.jenkins/jobs/SMOKE/workspace
+[Pipeline] {
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] timestamps
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Checkout)
+[Pipeline] echo
+[2026-08-09T16:57:00.889Z] [Pipeline] Starting checkout stage.
+[Pipeline] echo
+[2026-08-09T16:57:00.913Z] [Pipeline] Workspace: /Users/diya/.jenkins/jobs/SMOKE/workspace
+[Pipeline] echo
+[2026-08-09T16:57:00.938Z] [Pipeline] Branch parameter: stable
+[Pipeline] script
+[Pipeline] {
+[Pipeline] echo
+[2026-08-09T16:57:01.010Z] [Pipeline] Attempting checkout scm.
+[Pipeline] echo
+[2026-08-09T16:57:01.036Z] [Pipeline] SCM checkout not available in this Jenkins context: ‘checkout scm’ is only available when using “Multibranch Pipeline” or “Pipeline script from SCM”
+[Pipeline] dir
+[2026-08-09T16:57:01.062Z] Running in /Users/diya/.jenkins/jobs/SMOKE/workspace
+[Pipeline] {
+[Pipeline] echo
+[2026-08-09T16:57:01.126Z] [Pipeline] Falling back to local workspace inspection.
+[Pipeline] sh
+[2026-08-09T16:57:01.476Z] + pwd
+[2026-08-09T16:57:01.476Z] /Users/diya/.jenkins/jobs/SMOKE/workspace
+[2026-08-09T16:57:01.476Z] + ls -la
+[2026-08-09T16:57:01.476Z] total 592
+[2026-08-09T16:57:01.476Z] drwxr-xr-x  39 diya  staff    1248 Aug  9 21:16 .
+[2026-08-09T16:57:01.476Z] drwxr-xr-x   9 diya  staff     288 Aug  9 22:27 ..
+[2026-08-09T16:57:01.476Z] -rw-r--r--   1 diya  staff    5243 Aug  9 21:16 .clang-format
+[2026-08-09T16:57:01.476Z] drwxr-xr-x   4 diya  staff     128 Aug  9 21:16 .devcontainer
+[2026-08-09T16:57:01.476Z] drwxr-xr-x  12 diya  staff     384 Aug  9 22:18 .git
+[2026-08-09T16:57:01.476Z] -rw-r--r--   1 diya  staff    1398 Aug  9 21:16 .git-blame-ignore-revs
+[2026-08-09T16:57:01.476Z] drwxr-xr-x   6 diya  staff     192 Aug  9 21:16 .github
+[2026-08-09T16:57:01.476Z] -rw-r--r--   1 diya  staff     786 Aug  9 21:16 .gitignore
+[2026-08-09T16:57:01.476Z] -rw-r--r--   1 diya  staff   26316 Aug  9 21:16 .mailmap
+[2026-08-09T16:57:01.476Z] -rw-r--r--   1 diya  staff    4374 Aug  9 21:16 .pre-commit-config.yaml
+[2026-08-09T16:57:01.476Z] drwxr-xr-x   3 diya  staff      96 Aug  9 21:16 .vscode
+[2026-08-09T16:57:01.476Z] -rw-r--r--   1 diya  staff    5595 Aug  9 21:16 CODE-OF-CONDUCT.md
+[2026-08-09T16:57:01.476Z] -rw-r--r--   1 diya  staff   20889 Aug  9 21:16 CONTRIBUTING.md
+[2026-08-09T16:57:01.476Z] -rw-r--r--   1 diya  staff    2332 Aug  9 21:16 COPYING
+[2026-08-09T16:57:01.476Z] drwxr-xr-x   3 diya  staff      96 Aug  9 21:16 JENKINS
+[2026-08-09T16:57:01.476Z] -rw-r--r--   1 diya  staff    5681 Aug  9 21:16 KCONFIG.md
+[2026-08-09T16:57:01.476Z] -rw-r--r--   1 diya  staff    1478 Aug  9 21:16 LICENSE
+[2026-08-09T16:57:01.476Z] -rw-r--r--   1 diya  staff    6628 Aug  9 21:16 MAINTAINERS.yaml
+[2026-08-09T16:57:01.476Z] -rw-r--r--   1 diya  staff    5008 Aug  9 21:16 README.md
+[2026-08-09T16:57:01.476Z] -rw-r--r--   1 diya  staff  112750 Aug  9 21:16 RELEASE-NOTES.md
+[2026-08-09T16:57:01.476Z] -rwxr-xr-x   1 diya  staff   41742 Aug  9 21:16 SConstruct
+[2026-08-09T16:57:01.476Z] -rw-r--r--   1 diya  staff    9622 Aug  9 21:16 TESTING.md
+[2026-08-09T16:57:01.476Z] drwxr-xr-x   5 diya  staff     160 Aug  9 21:16 WORKLOAD
+[2026-08-09T16:57:01.476Z] drwxr-xr-x  24 diya  staff     768 Aug  9 21:16 build_opts
+[2026-08-09T16:57:01.476Z] drwxr-xr-x  16 diya  staff     512 Aug  9 21:16 build_tools
+[2026-08-09T16:57:01.476Z] drwxr-xr-x  14 diya  staff     448 Aug  9 21:16 configs
+[2026-08-09T16:57:01.476Z] drwxr-xr-x   7 diya  staff     224 Aug  9 21:16 docs
+[2026-08-09T16:57:01.476Z] drwxr-xr-x  26 diya  staff     832 Aug  9 21:16 ext
+[2026-08-09T16:57:01.476Z] drwxr-xr-x   3 diya  staff      96 Aug  9 21:16 include
+[2026-08-09T16:57:01.476Z] drwxr-xr-x  10 diya  staff     320 Aug  9 21:16 materials
+[2026-08-09T16:57:01.476Z] -rw-r--r--   1 diya  staff      13 Aug  9 21:16 optional-requirements.txt
+[2026-08-09T16:57:01.476Z] -rw-r--r--   1 diya  staff     291 Aug  9 21:16 pyproject.toml
+[2026-08-09T16:57:01.476Z] -rw-r--r--   1 diya  staff      31 Aug  9 21:16 requirements.txt
+[2026-08-09T16:57:01.476Z] drwxr-xr-x   6 diya  staff     192 Aug  9 21:16 site_scons
+[2026-08-09T16:57:01.476Z] drwxr-xr-x  11 diya  staff     352 Aug  9 21:16 slides
+[2026-08-09T16:57:01.476Z] drwxr-xr-x  21 diya  staff     672 Aug  9 21:16 src
+[2026-08-09T16:57:01.476Z] drwxr-xr-x   3 diya  staff      96 Aug  9 21:16 system
+[2026-08-09T16:57:01.476Z] drwxr-xr-x  10 diya  staff     320 Aug  9 21:16 tests
+[2026-08-09T16:57:01.476Z] drwxr-xr-x  71 diya  staff    2272 Aug  9 21:16 util
+[Pipeline] }
+[Pipeline] // dir
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Prepare Environment)
+[Pipeline] echo
+[2026-08-09T16:57:01.798Z] [Pipeline] Preparing Python environment and workspace folders.
+[Pipeline] sh
+[2026-08-09T16:57:02.083Z] + set -e
+[2026-08-09T16:57:02.083Z] + echo '[Shell] Python executable: python3'
+[2026-08-09T16:57:02.083Z] [Shell] Python executable: python3
+[2026-08-09T16:57:02.083Z] + python3 --version
+[2026-08-09T16:57:02.083Z] Python 3.14.6
+[2026-08-09T16:57:02.083Z] + echo '[Shell] Creating output directory: /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10'
+[2026-08-09T16:57:02.083Z] [Shell] Creating output directory: /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10
+[2026-08-09T16:57:02.083Z] + mkdir -p /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10
+[2026-08-09T16:57:02.083Z] + '[' -d /Users/diya/.jenkins/jobs/SMOKE/workspace/.git ']'
+[2026-08-09T16:57:02.083Z] + echo '[Shell] Workspace already contains a Git checkout.'
+[2026-08-09T16:57:02.083Z] [Shell] Workspace already contains a Git checkout.
+[2026-08-09T16:57:02.083Z] + cd /Users/diya/.jenkins/jobs/SMOKE/workspace
+[2026-08-09T16:57:02.083Z] + echo '[Shell] Updating submodules.'
+[2026-08-09T16:57:02.083Z] [Shell] Updating submodules.
+[2026-08-09T16:57:02.083Z] + git submodule update --init --recursive
+[2026-08-09T16:57:02.083Z] + echo '[Shell] Checking out branch: stable'
+[2026-08-09T16:57:02.083Z] [Shell] Checking out branch: stable
+[2026-08-09T16:57:02.083Z] + git checkout stable
+[2026-08-09T16:57:02.083Z] Already on 'stable'
+[2026-08-09T16:57:02.083Z] Your branch is up to date with 'origin/stable'.
+[2026-08-09T16:57:02.083Z] + echo '[Shell] Current repository status:'
+[2026-08-09T16:57:02.083Z] [Shell] Current repository status:
+[2026-08-09T16:57:02.083Z] + git status --short --branch
+[2026-08-09T16:57:02.407Z] ## stable...origin/stable
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Run Smoke Workflow)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] echo
+[2026-08-09T16:57:02.674Z] [Pipeline] Preparing smoke workflow arguments.
+[Pipeline] echo
+[2026-08-09T16:57:02.713Z] [Pipeline] Input directory: /Users/diya/Documents/JENKINS/SMOKE
+[Pipeline] echo
+[2026-08-09T16:57:02.741Z] [Pipeline] Chip configuration: /Users/diya/.jenkins/jobs/SMOKE/workspace/JENKINS/SMOKE/chip_configuration.json
+[Pipeline] echo
+[2026-08-09T16:57:02.765Z] [Pipeline] Output directory: /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10
+[Pipeline] echo
+[2026-08-09T16:57:02.792Z] [Pipeline] Smoke script: /Users/diya/.jenkins/jobs/SMOKE/workspace/JENKINS/SMOKE/jenkins_smoke.py
+[Pipeline] echo
+[2026-08-09T16:57:02.818Z] [Pipeline] Compile target: opt
+[Pipeline] echo
+[2026-08-09T16:57:02.844Z] [Pipeline] Chip name: CHIP_1
+[Pipeline] echo
+[2026-08-09T16:57:02.874Z] [Pipeline] Skip compilation: false
+[Pipeline] echo
+[2026-08-09T16:57:02.902Z] [Pipeline] Skip simulation: false
+[Pipeline] echo
+[2026-08-09T16:57:02.928Z] [Pipeline] Dry run: false
+[Pipeline] echo
+[2026-08-09T16:57:02.954Z] [Pipeline] Send email: false
+[Pipeline] echo
+[2026-08-09T16:57:03.010Z] [Pipeline] Running smoke workflow with command: python3 '/Users/diya/.jenkins/jobs/SMOKE/workspace/JENKINS/SMOKE/jenkins_smoke.py' '--input-dir' '/Users/diya/Documents/JENKINS/SMOKE' '--branch' 'stable' '--chip-configuration' '/Users/diya/.jenkins/jobs/SMOKE/workspace/JENKINS/SMOKE/chip_configuration.json' '--compile' 'opt' '--output-dir' '/Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10' '--chip-name' 'CHIP_1'
+[Pipeline] sh
+[2026-08-09T16:57:03.366Z] + python3 /Users/diya/.jenkins/jobs/SMOKE/workspace/JENKINS/SMOKE/jenkins_smoke.py --input-dir /Users/diya/Documents/JENKINS/SMOKE --branch stable --chip-configuration /Users/diya/.jenkins/jobs/SMOKE/workspace/JENKINS/SMOKE/chip_configuration.json --compile opt --output-dir /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10 --chip-name CHIP_1
+[2026-08-09T20:42:45.892Z] [WARNING] Input directory: /Users/diya/Documents/JENKINS/SMOKE
+[2026-08-09T20:42:45.892Z] [WARNING] Output directory: /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10
+[2026-08-09T20:42:45.892Z] [WARNING] Cloning repository into /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10
+[2026-08-09T20:42:45.892Z] [WARNING] Git commit: 094bd5c37fef2fc36bb14d4d577f264376343093
+[2026-08-09T20:42:45.892Z] [WARNING] Git branch: stable
+[2026-08-09T20:42:45.893Z] [WARNING] Pushed by: melonshreyas
+[2026-08-09T20:42:45.893Z] [WARNING] Changed files: none
+[2026-08-09T20:42:45.893Z] [WARNING] Compiling gem5 (opt) inside /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10
+[2026-08-09T20:42:45.893Z] [WARNING] Compile log indicates PASS for gem5.opt: /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/RESULTS/compilation/compile_opt.log
+[2026-08-09T20:42:45.893Z] [WARNING] Compilation complete. Binary: /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/build/ALL/gem5.opt
+[2026-08-09T20:42:45.893Z] [WARNING] Preparing compile directory for CHIP_1: /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/RESULTS/compilation/CHIP_1
+[2026-08-09T20:42:45.893Z] [WARNING] Wrote compilation report: /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/RESULTS/compilation/CHIP_1/results_compilation.json
+[2026-08-09T20:42:45.893Z] [WARNING] Ignoring --workload for CHIP_1/smoke_test_cores_materials; script does not consume this argument.
+[2026-08-09T20:42:45.893Z] [WARNING] Running simulation for CHIP_1/smoke_test_cores_materials with: /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/build/ALL/gem5.opt --outdir=/Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/RESULTS/simulation/CHIP_1/smoke_test_cores_materials --redirect-stdout --redirect-stderr /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/materials/02-Using-gem5/04-cores/cores.py
+[2026-08-09T20:42:45.893Z] [WARNING] Ignoring --workload for CHIP_1/smoke_test_cache_materials; script does not consume this argument.
+[2026-08-09T20:42:45.893Z] [WARNING] Running simulation for CHIP_1/smoke_test_cache_materials with: /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/build/ALL/gem5.opt --outdir=/Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/RESULTS/simulation/CHIP_1/smoke_test_cache_materials --redirect-stdout --redirect-stderr /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/materials/02-Using-gem5/05-cache-hierarchies/test-cache.py
+[2026-08-09T20:42:45.893Z] [WARNING] Ignoring --workload for CHIP_1/smoke_test_memory_materials; script does not consume this argument.
+[2026-08-09T20:42:45.893Z] [WARNING] Running simulation for CHIP_1/smoke_test_memory_materials with: /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/build/ALL/gem5.opt --outdir=/Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/RESULTS/simulation/CHIP_1/smoke_test_memory_materials --redirect-stdout --redirect-stderr /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/materials/02-Using-gem5/06-memory/run-mem.py
+[2026-08-09T20:42:45.893Z] [WARNING] Ignoring --workload for CHIP_1/smoke_test_full_system_materials; script does not consume this argument.
+[2026-08-09T20:42:45.893Z] [WARNING] Running simulation for CHIP_1/smoke_test_full_system_materials with: /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/build/ALL/gem5.opt --outdir=/Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/RESULTS/simulation/CHIP_1/smoke_test_full_system_materials --redirect-stdout --redirect-stderr /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/materials/02-Using-gem5/07-full-system/x86-fs-kvm-run.py
+[2026-08-09T20:42:45.893Z] [WARNING] Wrote general summary: /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/RESULTS/general_results.json
+[2026-08-09T20:42:45.893Z] [WARNING] Updated history results: /Users/diya/Documents/JENKINS/HISTORY/history_results.json
+[2026-08-09T20:42:45.893Z] [WARNING] Smoke workflow completed successfully.
+[Pipeline] echo
+[2026-08-09T20:42:45.993Z] [Pipeline] Smoke workflow command completed.
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Declarative: Post Actions)
+[Pipeline] echo
+[2026-08-09T20:42:46.205Z] Publishing smoke workflow artifacts and reports.
+[Pipeline] archiveArtifacts
+[2026-08-09T20:42:46.264Z] Archiving artifacts
+[2026-08-09T20:42:46.310Z] ‘/Users/diya/Documents/JENKINS/SMOKE/**/*.html’ doesn’t match anything, but ‘**/*.html’ does. Perhaps that’s what you mean?
+[2026-08-09T20:42:46.310Z] No artifacts found that match the file pattern "/Users/diya/Documents/JENKINS/SMOKE/**/*.html, /Users/diya/Documents/JENKINS/SMOKE/**/*.json, /Users/diya/Documents/JENKINS/HISTORY/**/*.html, /Users/diya/Documents/JENKINS/HISTORY/**/*.json". Configuration error?
+[Pipeline] publishHTML
+[2026-08-09T20:42:46.340Z] [htmlpublisher] Archiving HTML reports...
+[2026-08-09T20:42:46.342Z] [htmlpublisher] Archiving at BUILD level /Users/diya/Documents/JENKINS/HISTORY to Smoke_20History_20Report
+[2026-08-09T20:42:46.342Z] [htmlpublisher] Copying recursive using current thread
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] }
+[Pipeline] // timestamps
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] End of Pipeline
+Finished: SUCCESS
