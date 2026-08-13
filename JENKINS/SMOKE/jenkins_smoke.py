@@ -36,6 +36,7 @@ from send_email_report import send_history_report_email
 DEFAULT_INPUT_DIR = Path("/Users/diya/Documents/JENKINS/SMOKE")
 DEFAULT_REPO_URL = "https://github.com/melonshreyas/gem5_Setup_R.git"
 DEFAULT_HISTORY_DIR = Path("/Users/diya/Documents/JENKINS/HISTORY/SMOKE")
+DEFAULT_GOLDEN_DIR = Path("/Users/diya/Documents/JENKINS/HISTORY/GOLDEN/SMOKE")
 COMPILE_ERROR_PATTERNS = (
     r"\berror:\s+",
     r"\bfatal error:\s+",
@@ -1488,6 +1489,27 @@ def main() -> int:
     generate_smoke_results_json(output_dir, logger)
     generate_jenkins_history_smoke_results_html(DEFAULT_HISTORY_DIR, logger, limit=30)
     generate_jenkins_history_smoke_results_json(DEFAULT_HISTORY_DIR, logger, limit=30)
+
+    comparison_script = Path(__file__).resolve().parents[1] / "compare_golden_results.py"
+    comparison_report_dir = output_dir / "RESULTS" / "golden_comparison"
+    comparison = run_command(
+        [
+            sys.executable,
+            str(comparison_script),
+            "--build-dir",
+            str(output_dir),
+            "--golden-dir",
+            str(DEFAULT_GOLDEN_DIR),
+            "--report-dir",
+            str(comparison_report_dir),
+        ],
+        cwd=output_dir,
+        logger=logger,
+        allow_failure=True,
+    )
+    logger.warning(
+        f"Golden comparison completed with exit code {comparison.returncode}: {comparison_report_dir}"
+    )
 
     if args.send_email:
         history_report_path = DEFAULT_HISTORY_DIR / "jenkins_history_smoke_results.html"

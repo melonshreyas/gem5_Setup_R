@@ -127,6 +127,18 @@ History report files:
 - `/Users/diya/Documents/JENKINS/HISTORY/WEEKLY_REGRESSION/jenkins_history_weekly_results.json`
 - `/Users/diya/Documents/JENKINS/HISTORY/WEEKLY_REGRESSION/history_results.json`
 
+## Golden Comparison
+
+Each completed weekly build also runs `JENKINS/compare_golden_results.py` against the per-chip baselines in `/Users/diya/Documents/JENKINS/HISTORY/GOLDEN/WEEKLY_REGRESSION/`.
+
+The comparison allows a maximum 5% numeric deviation and writes the following table-oriented reports under `WEEKLY_BUILD_<N>/RESULTS/golden_comparison/`:
+
+- `golden_comparison.html` - visual table of testcase, metric, golden value, actual value, signed deviation, tolerance, and status
+- `golden_comparison.csv` - spreadsheet-friendly result table
+- `golden_comparison.json` - detailed machine-readable result data
+
+Statuses include `PASS`, `FAIL`, `MISSING_ACTUAL`, and `NO_BASELINE`. Add known-good values under each chip JSON's `golden_values` object to activate comparisons.
+
 ## Jenkins Screenshots
 
 ### Weekly Report View

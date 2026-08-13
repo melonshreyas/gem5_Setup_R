@@ -193,6 +193,20 @@ The history report is written to:
 
 These are updated from each successful run so recent builds can be compared over time.
 
+### Golden comparison reports
+
+After each completed run, `compare_golden_results.py` compares the build's per-testcase `stats.txt` values with the per-chip GOLDEN baselines under:
+
+- `/Users/diya/Documents/JENKINS/HISTORY/GOLDEN/SMOKE/`
+
+The comparison uses a 5% numeric deviation limit and writes a table report under the build's `RESULTS/golden_comparison/` directory:
+
+- `golden_comparison.html` - human-readable table with golden value, actual value, signed deviation, tolerance, and status
+- `golden_comparison.csv` - spreadsheet-friendly table
+- `golden_comparison.json` - machine-readable summary and row results
+
+Statuses are `PASS`, `FAIL`, `MISSING_ACTUAL`, or `NO_BASELINE`. Populate each chip JSON's `golden_values` object after capturing a known-good run; `NO_BASELINE` is intentionally reported until those values exist.
+
 ## Where to inspect results
 
 - Open the generated HTML report in a browser from the output directory.
