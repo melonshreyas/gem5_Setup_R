@@ -212,3 +212,126 @@ These are updated from each successful run so recent builds can be compared over
 - The workflow is designed for local or CI-style smoke validation.
 - The generated reports are intended to be human-readable and easy to inspect in a browser.
 - For actual email delivery, use a valid SMTP server and credentials such as a Gmail app password.
+
+## Reusing the Pipeline for a New Jenkins Job
+
+One of the biggest advantages of the `jenkins_smoke.groovy` pipeline is that it is completely parameterised. This means you can create a brand-new Jenkins job for a different workflow (for example `WEEKLY_REGRESSION` or `PROFILE_RUNS`) by simply duplicating the existing `SMOKE` job and changing the parameters — **no Groovy edits required**.
+
+### How to duplicate a Jenkins pipeline
+
+![Duplicate an existing Jenkins Pipeline](docs/jenkins_duplicate_pipeline.png)
+
+Jenkins makes this very easy through its **"Duplicate an existing Item"** option on the New Item page:
+
+1. Go to `http://localhost:8080/view/all/newJob`.
+2. Enter the new job name (for example `WEEKLY_REGRESSION`).
+3. At the bottom of the page, select **"Duplicate an existing Item"** and type `SMOKE` in the copy-from field.
+4. Click **OK**.
+5. In the new job's configuration, update only the parameters that differ (for example `CHIP_NAME`, `OUTPUT_DIR`, or the pipeline trigger schedule).
+6. Click **Save**.
+
+The new job will inherit the full pipeline script, all parameters, the build discard policy, and the report publishing configuration. The same `jenkins_smoke.py` script and `chip_configuration.json` can be reused unchanged, or pointed at a different configuration file for the new workflow.
+
+This approach ensures that any future improvements to the core pipeline (such as new report formats, better logging, or email support) can be rolled out to all derived jobs simply by updating the shared script.
+
+## Jenkins Integration in Action
+
+The screenshots below show the smoke workflow running end-to-end inside Jenkins, the output directory layout it produces, and how to reuse the pipeline for new jobs.
+
+### Jenkins Stage View — Build History
+
+![Jenkins Stage View](docs/jenkins_stage_view.png)
+
+The Jenkins Stage View shows all pipeline stages for each build:
+
+- **Checkout** — clones or updates the repository in the Jenkins workspace.
+- **Prepare Environment** — creates the output directory and updates Git submodules.
+- **Run Smoke Workflow** — compiles gem5 and runs all configured chip/simulation cases. This is the longest stage (~30 minutes for a full build and simulation run).
+- **Declarative: Post Actions** — archives the HTML and JSON report artifacts.
+
+Build `#10` (green) completed successfully in roughly 3 hours 45 minutes end-to-end. Earlier builds (`#5`–`#9`) show failed runs that were used to iterate on the pipeline configuration.
+
+---
+
+### Output Directory Structure — JENKINS Folder
+
+![JENKINS directory layout](docs/jenkins_smoke_directories.png)
+
+The JENKINS output tree on disk after several successful and in-progress builds. The top-level layout looks like:
+
+```text
+~/Documents/JENKINS/
+├── HISTORY/                         ← accumulated history across all runs
+│   ├── history_results.json
+│   ├── history_results_format.json
+│   ├── jenkins_history_smoke_results.html
+│   └── jenkins_history_smoke_results.json
+├── SMOKE/                           ← all smoke build outputs
+│   ├── SMOKE_BUILD_1/
+│   ├── SMOKE_BUILD_2/
+│   ├── SMOKE_BUILD_3/
+│   ├── SMOKE_BUILD_6/
+│   ├── SMOKE_BUILD_9/
+│   ├── SMOKE_BUILD_10/
+│   └── ...
+├── PROFILE_RUNS/
+└── WEEKLY_REGRESSION/
+```
+
+---
+
+### Build Output — SMOKE_BUILD_10 Contents
+
+![SMOKE_BUILD_10 directory contents](docs/jenkins_smoke_build_contents.png)
+
+Inside a completed build output directory (`SMOKE_BUILD_10`), the full gem5 repository checkout is present alongside the `RESULTS/` folder:
+
+```text
+SMOKE_BUILD_10/
+├── SConstruct
+├── src/
+├── build/
+├── materials/
+├── WORKLOAD/
+├── JENKINS/
+└── RESULTS/
+```
+
+The repository is cloned once per build into the build-numbered directory so each run is fully isolated and reproducible.
+
+---
+
+### RESULTS Tree — Compilation and Simulation Outputs
+
+![RESULTS tree from SMOKE_BUILD_10](docs/jenkins_results_tree.png)
+
+The `RESULTS/` folder inside a completed build contains all compilation and simulation outputs:
+
+```text
+RESULTS/
+├── compilation/
+│   ├── CHIP_1/
+│   │   ├── compile.log
+│   │   └── results_compilation.json
+│   └── compile_opt.log
+├── general_results.json
+└── simulation/
+    └── CHIP_1/
+        ├── smoke_test_cache_materials/
+        │   ├── citations.bib
+        │   ├── config.ini
+        │   ├── config.json
+        │   ├── simerr.txt
+        │   ├── simout.txt
+        │   ├── simulation.log
+        │   └── stats.txt
+        ├── smoke_test_cores_materials/
+        ├── smoke_test_full_system_materials/
+        └── smoke_test_memory_materials/
+```
+
+Each simulation case gets its own subdirectory with the full gem5 output including `stats.txt`, `simout.txt`, and `simerr.txt`.
+
+---
+
+> **Note for screenshots:** Save each image to `JENKINS/SMOKE/docs/` using the filenames referenced above (`jenkins_stage_view.png`, `jenkins_smoke_directories.png`, `jenkins_smoke_build_contents.png`, `jenkins_results_tree.png`, `jenkins_duplicate_pipeline.png`) so they render correctly in GitHub and any Markdown viewer.
