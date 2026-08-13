@@ -282,13 +282,6 @@ pipeline {
     post {
         always {
             echo 'Publishing smoke workflow artifacts and reports.'
-            sh '''
-                set +e
-                mkdir -p "$WORKSPACE/htmlreports/smoke_history"
-                cp -f /Users/diya/Documents/JENKINS/HISTORY/SMOKE/jenkins_history_smoke_results.html "$WORKSPACE/htmlreports/smoke_history/"
-                cp -f /Users/diya/Documents/JENKINS/HISTORY/SMOKE/smoke_report.css "$WORKSPACE/htmlreports/smoke_history/"
-                set -e
-            '''
             archiveArtifacts(
                 artifacts: '/Users/diya/Documents/JENKINS/SMOKE/**/*.html, /Users/diya/Documents/JENKINS/SMOKE/**/*.json, /Users/diya/Documents/JENKINS/HISTORY/**/*.html, /Users/diya/Documents/JENKINS/HISTORY/**/*.json',
                 allowEmptyArchive: true
@@ -299,7 +292,7 @@ pipeline {
                 alwaysLinkToLastBuild: true,
                 keepAll: true,
                 includes: '**/*',
-                reportDir: 'htmlreports/smoke_history',
+                reportDir: '/Users/diya/Documents/JENKINS/HISTORY/SMOKE',
                 reportFiles: 'jenkins_history_smoke_results.html',
                 reportName: 'Smoke History Report'
             ])

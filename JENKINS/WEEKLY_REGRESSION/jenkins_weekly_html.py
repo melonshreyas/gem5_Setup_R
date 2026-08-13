@@ -245,11 +245,11 @@ def render_weekly_results_html(page_title: str, summary_fields: Dict[str, Any], 
 
   def status_class(value: Any) -> str:
     normalized = str(value or "").strip().lower()
-    if normalized == "pass":
+    if normalized.startswith("pass"):
       return "status-pass"
-    if normalized == "fail":
+    if normalized.startswith("fail"):
       return "status-fail"
-    if normalized == "skip":
+    if normalized.startswith("skip"):
       return "status-skip"
     return ""
 

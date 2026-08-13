@@ -245,11 +245,11 @@ def render_smoke_results_html(page_title: str, summary_fields: Dict[str, Any], r
 
   def status_class(value: Any) -> str:
     normalized = str(value or "").strip().lower()
-    if normalized.startswith("pass"):
+    if normalized == "pass":
       return "status-pass"
-    if normalized.startswith("fail"):
+    if normalized == "fail":
       return "status-fail"
-    if normalized.startswith("skip"):
+    if normalized == "skip":
       return "status-skip"
     return ""
 

@@ -95,9 +95,9 @@ pipeline {
                 echo "[Pipeline] Workspace: ${env.WORKSPACE}"
                 echo "[Pipeline] Branch parameter: ${params.BRANCH}"
                 script {
-                    // Allow inline CSS/JS in published HTML reports (blocked by Jenkins CSP by default).
-                    System.setProperty('hudson.model.DirectoryBrowserSupport.CSP', '')
-                    echo '[Pipeline] Jenkins CSP relaxed for HTML report rendering.'
+                    // CSS is generated as an external file and published with HTML assets.
+                    // Avoid runtime JVM property changes here; Jenkins sandbox may block them.
+                    echo '[Pipeline] Skipping runtime CSP override; using external CSS assets for report styling.'
                     try {
                         echo '[Pipeline] Attempting checkout scm.'
                         checkout scm
