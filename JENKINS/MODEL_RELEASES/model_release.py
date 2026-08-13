@@ -48,7 +48,7 @@ ALLOWED_MODEL_UNITS = {
     "NVLINK_INTERFACE",
     "SMT_SCHEDULER",
 }
-DEFAULT_CHIP_CONFIGURATION = Path(__file__).resolve().parents[1] / "SMOKE" / "chip_configuration.json"
+DEFAULT_CHIP_CONFIGURATION = Path(__file__).resolve().parent / "chip_configuration.json"
 
 
 def required_text(value: str, field_name: str) -> str:

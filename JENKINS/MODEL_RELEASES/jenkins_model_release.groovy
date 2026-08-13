@@ -132,6 +132,15 @@ pipeline {
                 sh '''
                     #!/bin/bash
                     set -eu
+                    # Default optional params to empty/false so `set -u` cannot fail if a
+                    # build ran before a newly-added parameter was registered on the job.
+                    : "${CHIP_CONFIGURATION:=}"
+                    : "${DRY_RUN:=false}"
+                    : "${SEND_EMAIL:=false}"
+                    : "${SMTP_SERVER:=}"
+                    : "${SENDER_EMAIL:=}"
+                    : "${SENDER_PASSWORD:=}"
+                    : "${RECIPIENT_EMAILS:=}"
                     ARGS=(
                         --model-unit-name "$MODEL_UNIT_NAME"
                         --compile "$COMPILE_TARGET"
