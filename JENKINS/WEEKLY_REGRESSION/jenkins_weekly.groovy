@@ -24,7 +24,7 @@ pipeline {
         string(
             name: 'CHIP_CONFIGURATION',
             defaultValue: '',
-            description: 'Absolute path to chip_configuration.json. Leave empty to use JENKINS/SMOKE/chip_configuration.json inside the workspace.'
+            description: 'Absolute path to chip_configuration.json. Leave empty to use JENKINS/WEEKLY_REGRESSION/chip_configuration.json inside the workspace.'
         )
         choice(
             name: 'COMPILE_TARGET',
@@ -69,8 +69,8 @@ pipeline {
         WEEKLY_INPUT_DIR = "${env.WORKSPACE}"
         WEEKLY_OUTPUT_DIR = "/Users/diya/Documents/JENKINS/WEEKLY_REGRESSION/WEEKLY_BUILD_${env.BUILD_NUMBER}"
         WEEKLY_HISTORY_DIR = '/Users/diya/Documents/JENKINS/HISTORY/WEEKLY_REGRESSION'
-        WEEKLY_CONFIG = "${env.WORKSPACE}/JENKINS/SMOKE/chip_configuration.json"
-        WEEKLY_SCRIPT = "${env.WORKSPACE}/JENKINS/SMOKE/jenkins_weekly.py"
+        WEEKLY_CONFIG = "${env.WORKSPACE}/JENKINS/WEEKLY_REGRESSION/chip_configuration.json"
+        WEEKLY_SCRIPT = "${env.WORKSPACE}/JENKINS/WEEKLY_REGRESSION/jenkins_weekly.py"
         BUILD_TAG_VALUE = "${env.BUILD_TAG}"
         BUILD_ID_VALUE = "${env.BUILD_ID}"
         JOB_NAME_VALUE = "${env.JOB_NAME}"
@@ -195,7 +195,7 @@ pipeline {
                         ? (chipConfigRaw.startsWith('/') ? chipConfigRaw : "${env.WORKSPACE}/${chipConfigRaw}")
                         : env.WEEKLY_CONFIG
                     def outputDir = params.OUTPUT_DIR?.trim() ? params.OUTPUT_DIR : env.WEEKLY_OUTPUT_DIR
-                    def smokeScript = env.WEEKLY_SCRIPT ?: "${env.WORKSPACE}/JENKINS/SMOKE/jenkins_weekly.py"
+                    def smokeScript = env.WEEKLY_SCRIPT ?: "${env.WORKSPACE}/JENKINS/WEEKLY_REGRESSION/jenkins_weekly.py"
 
                     echo "[Pipeline] Input directory: ${inputDir}"
                     echo "[Pipeline] Chip configuration: ${chipConfig}"
@@ -280,7 +280,7 @@ pipeline {
         always {
             echo 'Publishing smoke workflow artifacts and reports.'
             archiveArtifacts(
-                artifacts: '/Users/diya/Documents/JENKINS/SMOKE/**/*.html, /Users/diya/Documents/JENKINS/SMOKE/**/*.json, /Users/diya/Documents/JENKINS/HISTORY/**/*.html, /Users/diya/Documents/JENKINS/HISTORY/**/*.json',
+                artifacts: '/Users/diya/Documents/JENKINS/WEEKLY_REGRESSION/**/*.html, /Users/diya/Documents/JENKINS/WEEKLY_REGRESSION/**/*.json, /Users/diya/Documents/JENKINS/HISTORY/**/*.html, /Users/diya/Documents/JENKINS/HISTORY/**/*.json',
                 allowEmptyArchive: true
             )
 
