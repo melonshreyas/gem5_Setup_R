@@ -69,6 +69,7 @@ pipeline {
         SMOKE_INPUT_DIR = "${env.WORKSPACE}"
         SMOKE_OUTPUT_DIR = "/Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_${env.BUILD_NUMBER}"
         SMOKE_HISTORY_DIR = '/Users/diya/Documents/JENKINS/HISTORY/SMOKE'
+        SMOKE_GOLDEN_DIR = '/Users/diya/Documents/JENKINS/HISTORY/GOLDEN/SMOKE'
         SMOKE_CONFIG = "${env.WORKSPACE}/JENKINS/SMOKE/chip_configuration.json"
         SMOKE_SCRIPT = "${env.WORKSPACE}/JENKINS/SMOKE/jenkins_smoke.py"
         BUILD_TAG_VALUE = "${env.BUILD_TAG}"
@@ -277,6 +278,23 @@ pipeline {
                 }
             }
         }
+
+        stage('Compare Golden Results') {
+            steps {
+                script {
+                    def outputDir = params.OUTPUT_DIR?.trim() ? params.OUTPUT_DIR : env.SMOKE_OUTPUT_DIR
+                    echo "[Pipeline] Comparing ${outputDir} against golden baselines in ${env.SMOKE_GOLDEN_DIR}."
+                    sh """
+                        set +e
+                        \"\$PYTHON_BIN\" \"\$WORKSPACE/JENKINS/compare_golden_results.py\" \\
+                            --build-dir \"${outputDir}\" \\
+                            --golden-dir \"\$SMOKE_GOLDEN_DIR\"
+                        set -e
+                    """
+                    echo '[Pipeline] Golden comparison completed.'
+                }
+            }
+        }
     }
 
     post {
@@ -287,6 +305,9 @@ pipeline {
                 mkdir -p "$WORKSPACE/htmlreports/smoke_history"
                 cp -f /Users/diya/Documents/JENKINS/HISTORY/SMOKE/jenkins_history_smoke_results.html "$WORKSPACE/htmlreports/smoke_history/"
                 cp -f /Users/diya/Documents/JENKINS/HISTORY/SMOKE/smoke_report.css "$WORKSPACE/htmlreports/smoke_history/"
+                OUTPUT_DIR_VALUE="${OUTPUT_DIR:-$SMOKE_OUTPUT_DIR}"
+                mkdir -p "$WORKSPACE/htmlreports/golden_comparison"
+                cp -f "$OUTPUT_DIR_VALUE/RESULTS/golden_comparison/golden_comparison.html" "$WORKSPACE/htmlreports/golden_comparison/"
                 set -e
             '''
             archiveArtifacts(
@@ -302,6 +323,16 @@ pipeline {
                 reportDir: 'htmlreports/smoke_history',
                 reportFiles: 'jenkins_history_smoke_results.html',
                 reportName: 'Smoke History Report'
+            ])
+
+            publishHTML(target: [
+                allowMissing: true,
+                alwaysLinkToLastBuild: true,
+                keepAll: true,
+                includes: '**/*',
+                reportDir: 'htmlreports/golden_comparison',
+                reportFiles: 'golden_comparison.html',
+                reportName: 'Golden Comparison Report'
             ])
         }
 
