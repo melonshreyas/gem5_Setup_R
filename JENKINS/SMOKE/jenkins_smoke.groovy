@@ -95,6 +95,9 @@ pipeline {
                 echo "[Pipeline] Workspace: ${env.WORKSPACE}"
                 echo "[Pipeline] Branch parameter: ${params.BRANCH}"
                 script {
+                    // Allow inline CSS/JS in published HTML reports (blocked by Jenkins CSP by default).
+                    System.setProperty('hudson.model.DirectoryBrowserSupport.CSP', '')
+                    echo '[Pipeline] Jenkins CSP relaxed for HTML report rendering.'
                     try {
                         echo '[Pipeline] Attempting checkout scm.'
                         checkout scm
@@ -288,6 +291,7 @@ pipeline {
                 allowMissing: true,
                 alwaysLinkToLastBuild: true,
                 keepAll: true,
+                includes: '**/*',
                 reportDir: '/Users/diya/Documents/JENKINS/HISTORY/SMOKE',
                 reportFiles: 'jenkins_history_smoke_results.html',
                 reportName: 'Smoke History Report'

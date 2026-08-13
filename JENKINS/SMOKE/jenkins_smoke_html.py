@@ -9,6 +9,95 @@ from html import escape
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+# External CSS filename written alongside every HTML report to bypass Jenkins CSP.
+_REPORT_CSS_FILENAME = "smoke_report.css"
+_REPORT_CSS = """:root {
+  color-scheme: light;
+  --bg: #f6f8fb;
+  --panel: #ffffff;
+  --border: #dbe3ee;
+  --heading: #14213d;
+  --muted: #667085;
+  --accent: #1f3a5f;
+  --ok: #137333;
+  --fail: #b42318;
+  --skip: #7a4e00;
+}
+body {
+  margin: 0;
+  background: linear-gradient(180deg, #eef3f8 0%, var(--bg) 160px);
+  color: var(--heading);
+  font-family: Arial, Helvetica, sans-serif;
+}
+.page { max-width: 1600px; margin: 0 auto; padding: 24px; }
+.hero {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px 22px;
+  box-shadow: 0 6px 24px rgba(15, 23, 42, 0.06);
+  margin-bottom: 18px;
+}
+.hero h1 { margin: 0 0 6px 0; font-size: 28px; }
+.hero p { margin: 0; color: var(--muted); line-height: 1.5; }
+.section-title { font-size: 18px; margin: 20px 0 10px; }
+.detail-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px 20px;
+  box-shadow: 0 6px 24px rgba(15, 23, 42, 0.05);
+}
+.detail-line {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid #eef2f7;
+}
+.detail-line:last-child { border-bottom: 0; }
+.detail-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+.detail-value { font-size: 14px; line-height: 1.45; word-break: break-word; }
+.table-wrap {
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--panel);
+  box-shadow: 0 6px 24px rgba(15, 23, 42, 0.05);
+}
+table { width: 100%; min-width: 1600px; border-collapse: collapse; background: var(--panel); }
+th, td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e7edf5;
+  vertical-align: top;
+  text-align: left;
+  font-size: 12px;
+  word-break: break-word;
+}
+thead th {
+  position: sticky;
+  top: 0;
+  background: var(--accent);
+  color: #ffffff;
+  z-index: 1;
+  white-space: nowrap;
+}
+thead tr:nth-child(2) th { top: 39px; background: #27496d; }
+tr:nth-child(even) td { background: #f9fbfd; }
+td.group-cell { background: #f2f6fb; font-weight: 700; }
+.status-pass { background: #92d050; color: #111111; font-weight: 700; }
+.status-fail { background: #ff1a1a; color: #111111; font-weight: 700; }
+.status-skip { background: #ffd966; color: #111111; font-weight: 700; }
+.mono { font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px; white-space: pre-wrap; }
+.small { color: var(--muted); font-size: 12px; margin-top: 8px; }
+"""
+
+
 __all__ = [
     "generate_jenkins_history_smoke_results_html",
     "generate_jenkins_history_smoke_results_json",
@@ -225,125 +314,7 @@ def render_smoke_results_html(page_title: str, summary_fields: Dict[str, Any], r
   if not table_rows:
     table_rows.append("<tr><td colspan='11'>No rows available.</td></tr>")
 
-  style = """
-    <style>
-      :root {
-        color-scheme: light;
-        --bg: #f6f8fb;
-        --panel: #ffffff;
-        --border: #dbe3ee;
-        --heading: #14213d;
-        --muted: #667085;
-        --accent: #1f3a5f;
-        --ok: #137333;
-        --fail: #b42318;
-        --skip: #7a4e00;
-      }
-      body {
-        margin: 0;
-        background: linear-gradient(180deg, #eef3f8 0%, var(--bg) 160px);
-        color: var(--heading);
-        font-family: Arial, Helvetica, sans-serif;
-      }
-      .page {
-        max-width: 1600px;
-        margin: 0 auto;
-        padding: 24px;
-      }
-      .hero {
-        background: var(--panel);
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 20px 22px;
-        box-shadow: 0 6px 24px rgba(15, 23, 42, 0.06);
-        margin-bottom: 18px;
-      }
-      .hero h1 { margin: 0 0 6px 0; font-size: 28px; }
-      .hero p { margin: 0; color: var(--muted); line-height: 1.5; }
-      .section-title { font-size: 18px; margin: 20px 0 10px; }
-      .detail-panel {
-        background: var(--panel);
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 18px 20px;
-        box-shadow: 0 6px 24px rgba(15, 23, 42, 0.05);
-      }
-      .detail-line {
-        display: grid;
-        grid-template-columns: 220px 1fr;
-        gap: 12px;
-        padding: 7px 0;
-        border-bottom: 1px solid #eef2f7;
-      }
-      .detail-line:last-child {
-        border-bottom: 0;
-      }
-      .detail-label {
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: var(--muted);
-      }
-      .detail-value {
-        font-size: 14px;
-        line-height: 1.45;
-        word-break: break-word;
-      }
-      .table-wrap {
-        overflow: auto;
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        background: var(--panel);
-        box-shadow: 0 6px 24px rgba(15, 23, 42, 0.05);
-      }
-      table {
-        width: 100%;
-        min-width: 1600px;
-        border-collapse: collapse;
-        background: var(--panel);
-      }
-      th, td {
-        padding: 10px 12px;
-        border-bottom: 1px solid #e7edf5;
-        vertical-align: top;
-        text-align: left;
-        font-size: 12px;
-        word-break: break-word;
-      }
-      thead th {
-        position: sticky;
-        top: 0;
-        background: var(--accent);
-        color: #ffffff;
-        z-index: 1;
-        white-space: nowrap;
-      }
-      thead tr:nth-child(2) th { top: 39px; background: #27496d; }
-      tr:nth-child(even) td { background: #f9fbfd; }
-      td.group-cell { background: #f2f6fb; font-weight: 700; }
-      .status-pass {
-        background: #92d050;
-        color: #111111;
-        font-weight: 700;
-      }
-      .status-fail {
-        background: #ff1a1a;
-        color: #111111;
-        font-weight: 700;
-      }
-      .status-skip {
-        background: #ffd966;
-        color: #111111;
-        font-weight: 700;
-      }
-      .mono {
-        font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-        font-size: 11px;
-        white-space: pre-wrap;
-      }
-      .small { color: var(--muted); font-size: 12px; margin-top: 8px; }
-    </style>
-    """
+  style = "  <link rel=\"stylesheet\" href=\"smoke_report.css\">"
 
   subtitle = "Grouped by CHIP_NAME with CASE_NAME rows underneath, and SIMULATION_RUN_TIME split into simSeconds and hostSeconds."
 
@@ -470,6 +441,7 @@ def generate_smoke_results_html(output_dir: Path, logger: Any) -> None:
     }
     html_text = render_smoke_results_html("Smoke Results", summary_fields, rows)
     report_path = output_dir / "RESULTS" / "smoke_results.html"
+    (output_dir / "RESULTS" / _REPORT_CSS_FILENAME).write_text(_REPORT_CSS, encoding="utf-8")
     report_path.write_text(html_text, encoding="utf-8")
     logger.warning(f"Wrote smoke HTML report: {report_path}")
 
@@ -539,6 +511,7 @@ def generate_jenkins_history_smoke_results_html(history_dir: Path, logger: Any, 
 
     html_text = render_smoke_results_html("Jenkins History Smoke Results", summary_fields, selected_rows)
     report_path = history_dir / "jenkins_history_smoke_results.html"
+    (history_dir / _REPORT_CSS_FILENAME).write_text(_REPORT_CSS, encoding="utf-8")
     report_path.write_text(html_text, encoding="utf-8")
     logger.warning(f"Wrote Jenkins history HTML report: {report_path}")
 

@@ -95,6 +95,9 @@ pipeline {
                 echo "[Pipeline] Workspace: ${env.WORKSPACE}"
                 echo "[Pipeline] Branch parameter: ${params.BRANCH}"
                 script {
+                    // Allow inline CSS/JS in published HTML reports (blocked by Jenkins CSP by default).
+                    System.setProperty('hudson.model.DirectoryBrowserSupport.CSP', '')
+                    echo '[Pipeline] Jenkins CSP relaxed for HTML report rendering.'
                     try {
                         echo '[Pipeline] Attempting checkout scm.'
                         checkout scm
@@ -114,9 +117,23 @@ pipeline {
             steps {
                 script {
                     // Read chip names from chip_configuration.json and update CHIP_NAME choices for the next build.
-                    def chipConfigPath = params.CHIP_CONFIGURATION?.trim()
+                    // Discovery is best-effort: if the repo/config is not present yet, this build continues.
+                    def configuredPath = params.CHIP_CONFIGURATION?.trim()
                         ? (params.CHIP_CONFIGURATION.startsWith('/') ? params.CHIP_CONFIGURATION : "${env.WORKSPACE}/${params.CHIP_CONFIGURATION}")
-                        : env.WEEKLY_CONFIG
+                        : ''
+                    def candidatePaths = []
+                    if (configuredPath) {
+                        candidatePaths << configuredPath
+                    }
+                    candidatePaths << env.WEEKLY_CONFIG
+                    candidatePaths << "${env.WORKSPACE}/JENKINS/SMOKE/chip_configuration.json"
+
+                    def chipConfigPath = candidatePaths.find { path -> path?.trim() && fileExists(path) }
+                    if (!chipConfigPath) {
+                        echo "[Pipeline] CHIP discovery skipped: no chip_configuration.json found in candidates: ${candidatePaths.join(', ')}"
+                        echo '[Pipeline] This is expected on first run before repository checkout/clone; parameter choices stay unchanged for this build.'
+                        return
+                    }
 
                     def chipNamesRaw = sh(
                         script: "${env.PYTHON_BIN} -c \"import json; cfg=json.load(open('${chipConfigPath}')); print('\\n'.join(['ALL']+sorted(cfg.keys())))\"",
@@ -288,6 +305,7 @@ pipeline {
                 allowMissing: true,
                 alwaysLinkToLastBuild: true,
                 keepAll: true,
+                includes: '**/*',
                 reportDir: '/Users/diya/Documents/JENKINS/HISTORY/WEEKLY_REGRESSION',
                 reportFiles: 'jenkins_history_weekly_results.html',
                 reportName: 'Smoke History Report'
