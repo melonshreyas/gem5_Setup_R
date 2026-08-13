@@ -124,6 +124,74 @@ The pipeline stops in `CHECK_REQUIRED_INPUTS` if any required value is empty.
 
 Email credentials should be supplied through Jenkins credentials/environment configuration where possible. Do not commit passwords or app passwords to the repository.
 
+## Jenkins Job Configuration
+
+Configure the job at `http://localhost:8080/job/MODEL_RELEASES/configure`.
+
+### Pipeline section
+
+- Definition: `Pipeline script from SCM` (or `Pipeline script` pasted directly)
+- SCM: `Git`
+- Repository URL: `https://github.com/melonshreyas/gem5_Setup_R.git`
+- Branch: `*/stable`
+- Script Path: `JENKINS/MODEL_RELEASES/jenkins_model_release.groovy`
+
+![Pipeline script configuration](docs/jenkins_model_release_pipeline_script.png)
+
+### This project is parameterized
+
+Enable **This project is parameterized** and add one parameter per row below. The Jenkinsfile's `INITIALIZE_PARAMETERS` stage keeps these definitions in sync automatically after the first run, but they can also be added manually the same way.
+
+| Jenkins parameter type | Name | Default / choices |
+|---|---|---|
+| Choice Parameter | `MODEL_UNIT_NAME` | 26 POWER9 unit names (see above) |
+| String Parameter | `BRANCH` | `stable` |
+| Choice Parameter | `COMPILE_TARGET` | `opt`, `debug` |
+| Choice Parameter | `CHIP_NAME` | `ALL`, `CHIP_1`, `CHIP_2`, `CHIP_3` |
+| String Parameter | `TESTCASE` | `ALL` |
+| String Parameter | `CHIP_CONFIGURATION` | empty (defaults to SMOKE config) |
+| Boolean Parameter | `DRY_RUN` | unchecked |
+| Boolean Parameter | `SEND_EMAIL` | unchecked |
+| String Parameter | `SMTP_SERVER` | empty |
+| String Parameter | `SENDER_EMAIL` | empty |
+| Password Parameter | `SENDER_PASSWORD` | empty |
+| Multi-line String Parameter | `RECIPIENT_EMAILS` | empty |
+| Multi-line String Parameter | `SUMMARY` | empty |
+| Multi-line String Parameter | `FIXES` | empty |
+| String Parameter | `REPO_URL` | `https://github.com/melonshreyas/gem5_Setup_R.git` |
+
+![This project is parameterized](docs/jenkins_model_release_parameters.png)
+
+Do not add `RELEASE_NAME` or `RELEASE_VERSION` parameters; the version is generated automatically (for example `IFU_1`, `IFU_2`).
+
+### Build with Parameters
+
+Once the parameters are saved, the job shows a **Build with Parameters** form listing every parameter above with its type-appropriate control (dropdown, text box, checkbox, password field, or multi-line box).
+
+![Build with Parameters form](docs/jenkins_model_release_build_with_parameters.png)
+
+### SUMMARY and FIXES are mandatory
+
+`SUMMARY` and `FIXES` are required release fields. If either is left blank, the `CHECK_REQUIRED_INPUTS` stage fails immediately and the build is blocked before any checkout, clone, or compilation happens:
+
+```text
+ERROR: RELEASE BLOCKED: missing required parameters: SUMMARY, FIXES
+Finished: FAILURE
+```
+
+![Console output showing a blocked release](docs/jenkins_model_release_blocked_console.png)
+
+This is enforced twice for defense in depth:
+
+1. In Jenkins, `CHECK_REQUIRED_INPUTS` rejects the build if `params.SUMMARY` or `params.FIXES` is empty or blank.
+2. In Python, `collect_release()` and `dry_run_release()` both call `required_text(args.summary, "SUMMARY")` and `required_text(args.fixes, "FIXES")`, so direct command-line invocations are blocked the same way.
+
+Both values are then stored, once validated, in every generated JSON artifact:
+
+- the per-release `release_manifest.json` (`summary`, `fixes` fields)
+- the aggregate `model_releases.json` index entry for that release
+- `RELEASE_NOTES.md` under the `## Summary` and `## Fixes` headings
+
 ## Chip and Testcase Selection
 
 The default configuration is:

@@ -71,7 +71,7 @@ pipeline {
                             booleanParam(name: 'SEND_EMAIL', defaultValue: false, description: 'Send the unit/version HTML release report by email.'),
                             string(name: 'SMTP_SERVER', defaultValue: '', description: 'SMTP server hostname.'),
                             string(name: 'SENDER_EMAIL', defaultValue: '', description: 'Sender email address.'),
-                            password(name: 'SENDER_PASSWORD', defaultValue: '', description: 'SMTP password or app password.'),
+                            password(name: 'SENDER_PASSWORD', description: 'SMTP password or app password.'),
                             text(name: 'RECIPIENT_EMAILS', defaultValue: '', description: 'Comma-separated recipient email addresses.'),
                             text(name: 'SUMMARY', defaultValue: '', description: 'Required release summary.'),
                             text(name: 'FIXES', defaultValue: '', description: 'Required list of fixes and changes.'),
@@ -105,7 +105,8 @@ pipeline {
         stage('CHECKOUT_SOURCE') {
             steps {
                 echo '[RELEASE] Checking out the release source repository.'
-                checkout scm
+                // Explicit checkout so this works whether the job is "Pipeline script" or "Pipeline script from SCM" (scm var is only available in the latter)
+                git branch: params.BRANCH, url: params.REPO_URL
             }
         }
 
