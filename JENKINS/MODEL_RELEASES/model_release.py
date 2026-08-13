@@ -51,6 +51,12 @@ ALLOWED_MODEL_UNITS = {
 DEFAULT_CHIP_CONFIGURATION = Path(__file__).resolve().parent / "chip_configuration.json"
 
 
+def log(message: str) -> None:
+    """Print a timestamped stage progress message immediately (unbuffered) to stdout."""
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{timestamp}] [RELEASE] {message}", flush=True)
+
+
 def required_text(value: str, field_name: str) -> str:
     cleaned = str(value or "").strip()
     if not cleaned:
@@ -112,12 +118,16 @@ def run_testcase(repo_dir: Path, output_dir: Path, binary: Path, chip: str, test
     args = [str(token) for token in case_config.get("sim_script_args", [])]
     args = [token for token in args if not token.startswith("--outdir") and not token.startswith("--workload")]
     command = [str(binary), f"--outdir={case_dir}", "--redirect-stdout", "--redirect-stderr", str(script), *args]
+    log(f"SIMULATE {chip}/{testcase}: starting.")
     started = time.perf_counter()
     result = run(command, repo_dir, case_dir / "simulation.log")
+    runtime_seconds = round(time.perf_counter() - started, 3)
+    status = "PASS" if result.returncode == 0 else "FAIL"
+    log(f"SIMULATE {chip}/{testcase}: {status} in {runtime_seconds}s (return code {result.returncode}).")
     return {
-        "status": "PASS" if result.returncode == 0 else "FAIL",
+        "status": status,
         "return_code": result.returncode,
-        "runtime_seconds": round(time.perf_counter() - started, 3),
+        "runtime_seconds": runtime_seconds,
         "command": command,
         "output_dir": str(case_dir),
         "stats_file": str(case_dir / "stats.txt"),
@@ -249,6 +259,7 @@ def collect_release(args: argparse.Namespace) -> Path:
     model_unit_name = required_text(args.model_unit_name, "MODEL_UNIT_NAME").upper()
     if model_unit_name not in ALLOWED_MODEL_UNITS:
         raise ValueError(f"Release blocked: unsupported MODEL_UNIT_NAME '{model_unit_name}'.")
+    log(f"Starting model release for {model_unit_name} (branch={args.branch}, compile={args.compile}, chip={args.chip_name}, testcase={args.testcase}).")
 
     branch = required_text(args.branch, "BRANCH")
     summary = required_text(args.summary, "SUMMARY")
@@ -260,16 +271,21 @@ def collect_release(args: argparse.Namespace) -> Path:
     if release_dir.exists() and any(release_dir.iterdir()):
         raise ValueError(f"Release blocked: generated version already exists: {release_dir}")
     release_dir.mkdir(parents=True, exist_ok=True)
+    log(f"STAGE 1/5: Release directory prepared: {release_dir}")
 
     repo_dir = release_dir / "source"
     if not repo_dir.exists():
+        log(f"STAGE 2/5: Cloning branch '{branch}' from {args.repo_url} (this can take a while)...")
         clone = run(["git", "clone", "--recursive", "--branch", branch, args.repo_url, str(repo_dir)], release_dir, release_dir / "clone.log")
         if clone.returncode:
             raise RuntimeError(clone.stderr.strip() or "Source clone failed")
+        log(f"STAGE 2/5: Clone complete: {repo_dir}")
     else:
+        log(f"STAGE 2/5: Reusing existing source checkout, fetching branch '{branch}'...")
         run(["git", "fetch", "--all", "--prune"], repo_dir)
         run(["git", "checkout", branch], repo_dir)
         run(["git", "submodule", "update", "--init", "--recursive"], repo_dir)
+        log("STAGE 2/5: Fetch and checkout complete.")
 
     config_path = Path(args.chip_configuration).expanduser().resolve() if args.chip_configuration else DEFAULT_CHIP_CONFIGURATION
     config = load_config(config_path)
@@ -277,17 +293,24 @@ def collect_release(args: argparse.Namespace) -> Path:
     target = "gem5.opt" if args.compile == "opt" else "gem5.debug"
     build_log = release_dir / "RESULTS" / "compilation" / f"compile_{args.compile}.log"
     build_log.parent.mkdir(parents=True, exist_ok=True)
+    log(f"STAGE 3/5: Compiling build/ALL/{target} (this can take a long time, see {build_log})...")
     started = time.perf_counter()
     compile_result = run(["scons", f"build/ALL/{target}", "-j20", "--ignore-style", "--install-hooks"], repo_dir, build_log)
     binary = repo_dir / "build" / "ALL" / target
     if compile_result.returncode or not binary.exists():
         raise RuntimeError(f"Compilation failed; see {build_log}")
+    compile_seconds = round(time.perf_counter() - started, 3)
+    log(f"STAGE 3/5: Compilation complete in {compile_seconds}s: {binary}")
 
     chip_results: Dict[str, Any] = {}
+    log(f"STAGE 4/5: Running simulations for chips: {', '.join(selected_chips)}")
     for chip in selected_chips:
         chip_results[chip] = {}
-        for testcase, case_config in expand_cases(config[chip], args.testcase):
+        testcases = expand_cases(config[chip], args.testcase)
+        log(f"STAGE 4/5: {chip}: {len(testcases)} testcase(s) to run.")
+        for testcase, case_config in testcases:
             chip_results[chip][testcase] = run_testcase(repo_dir, release_dir, binary, chip, testcase, case_config)
+    log("STAGE 4/5: All simulations complete.")
 
     manifest: Dict[str, Any] = {
         "release_name": f"{model_unit_name}-{release_version}",
@@ -318,13 +341,16 @@ def collect_release(args: argparse.Namespace) -> Path:
         f"## Fixes\n\n{fixes}\n",
         encoding="utf-8",
     )
+    log("STAGE 5/5: Writing manifest, release notes, and HTML report...")
     report_path = write_release_report(release_dir, manifest)
     manifest["report_file"] = str(report_path)
     manifest["release_index_file"] = str(RELEASE_INDEX_PATH)
     (release_dir / "release_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     update_release_index(manifest)
+    log(f"STAGE 5/5: Manifest and report written: {report_path}")
 
     if args.send_email:
+        log("STAGE 5/5: Sending release report email...")
         sent = send_release_report_email(
             report_path=report_path,
             recipients=args.recipient_email,
@@ -336,6 +362,8 @@ def collect_release(args: argparse.Namespace) -> Path:
         )
         if not sent:
             raise RuntimeError("Release email delivery failed; check SMTP settings and credentials.")
+        log("STAGE 5/5: Email sent.")
+    log(f"RELEASE COMPLETE: {release_dir}")
     return release_dir
 
 
