@@ -145,7 +145,8 @@ pipeline {
             steps {
                 sh '''
                     set -eu
-                    RELEASE_DIR=$(find "$RELEASE_ROOT/$MODEL_UNIT_NAME" -mindepth 1 -maxdepth 1 -type d -name "${MODEL_UNIT_NAME}_*" -print | sort | tail -n 1)
+                    RELEASE_DIR=$(find "$RELEASE_ROOT/$MODEL_UNIT_NAME" -mindepth 1 -maxdepth 1 -type d -name "${MODEL_UNIT_NAME}_*" -exec basename {} \; | awk -F_ '{print $NF "\t" $0}' | sort -n | tail -n 1 | cut -f2)
+                    RELEASE_DIR="$RELEASE_ROOT/$MODEL_UNIT_NAME/$RELEASE_DIR"
                     test -n "$RELEASE_DIR"
                     test -s "$RELEASE_DIR/release_manifest.json"
                     test -s "$RELEASE_DIR/RELEASE_NOTES.md"
@@ -164,7 +165,8 @@ pipeline {
                     set -eu
                     rm -rf release_artifacts
                     mkdir -p release_artifacts
-                    RELEASE_DIR=$(find "$RELEASE_ROOT/$MODEL_UNIT_NAME" -mindepth 1 -maxdepth 1 -type d -name "${MODEL_UNIT_NAME}_*" -print | sort | tail -n 1)
+                    RELEASE_DIR=$(find "$RELEASE_ROOT/$MODEL_UNIT_NAME" -mindepth 1 -maxdepth 1 -type d -name "${MODEL_UNIT_NAME}_*" -exec basename {} \; | awk -F_ '{print $NF "\t" $0}' | sort -n | tail -n 1 | cut -f2)
+                    RELEASE_DIR="$RELEASE_ROOT/$MODEL_UNIT_NAME/$RELEASE_DIR"
                     cp -R "$RELEASE_DIR/." release_artifacts/
                 '''
                 archiveArtifacts artifacts: 'release_artifacts/**/*.json, release_artifacts/**/*.md, release_artifacts/**/*.html', allowEmptyArchive: false

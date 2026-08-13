@@ -349,3 +349,19 @@ Each simulation case gets its own subdirectory with the full gem5 output includi
 ---
 
 > **Note for screenshots:** Save each image to `JENKINS/SMOKE/docs/` using the filenames referenced above (`jenkins_stage_view.png`, `jenkins_smoke_directories.png`, `jenkins_smoke_build_contents.png`, `jenkins_results_tree.png`, `jenkins_duplicate_pipeline.png`) so they render correctly in GitHub and any Markdown viewer.
+
+## Purpose
+
+This automation is intended to streamline recurring model-validation activities, reduce repetitive manual steps, and provide a consistent record of each run. It is a practical engineering workflow for improving repeatability, traceability, and validation; it is not intended to make judgments about individuals, teams, or organizations.
+
+## Industry Practice
+
+Build automation, CI/CD pipelines, regression execution, environment checks, revision tracking, and release validation are standard support processes used across software, hardware, firmware, verification, modeling, validation, and release-engineering teams. Jenkins or an equivalent automation platform is general engineering infrastructure rather than a domain-specific activity, and this workflow follows that common pattern to reduce repeated manual work around smoke validation. Its use should remain within the user's authorized access and applicable company security, confidentiality, and information-handling policies; the workflow is routine engineering support and does not change an engineer's core technical responsibilities.
+
+Participation in these activities is not intended to limit a person to release automation, CI/CD, or support work. Engineers who develop and maintain such workflows can also contribute to broader technical areas, including modeling, microarchitecture, performance analysis, SystemC/C++, verification, and system-level engineering, according to their role, interests, skills, and authorized opportunities. Support infrastructure is one part of an engineering contribution, not a definition or restriction of a person's capabilities.
+
+## Logging and Traceability
+
+Each run may record operational details such as the Jenkins build number, Git branch, commit ID, commit author, compile target, stage results, runtime, simulation logs, statistics, and output paths. These details make it easier to reproduce a result, identify technical bottlenecks, understand recurring failures, and improve the workflow.
+
+This information is intended for engineering traceability and process improvement only. It is not intended for micromanagement, surveillance, personal criticism, or evaluation of individuals. Conclusions should be based on technical evidence and run context, not isolated metadata such as a commit author or build duration.

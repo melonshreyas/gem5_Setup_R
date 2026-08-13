@@ -80,17 +80,26 @@ def parse_stats(stats_path: Path) -> Dict[str, float]:
     return values
 
 
-def _load_golden(golden_file: Path) -> Tuple[Dict[str, Dict[str, float]], float]:
+def _load_golden(golden_file: Path) -> Tuple[Dict[str, Any], float]:
     payload = json.loads(golden_file.read_text(encoding="utf-8"))
     tolerance = float(payload.get("golden_profile", {}).get("tolerance_percent", DEFAULT_TOLERANCE_PERCENT))
+    return payload, tolerance
+
+
+def _configured_metrics(payload: Dict[str, Any], testcase: str) -> List[str]:
+    """Return generic plus testcase-specific metrics configured for one case."""
+    metrics = [str(metric) for metric in payload.get("stats_txt_parameters", [])]
+    if testcase == "smoke_test_cache_materials":
+        metrics.extend(str(metric) for metric in payload.get("cache_testcase_extra_parameters", []))
+    return list(dict.fromkeys(metrics))
+
+
+def _baseline_metrics(payload: Dict[str, Any], testcase: str) -> Dict[str, float]:
     baselines = payload.get("golden_values", {})
     if not isinstance(baselines, dict):
-        return {}, tolerance
-    result: Dict[str, Dict[str, float]] = {}
-    for testcase, values in baselines.items():
-        if isinstance(values, dict):
-            result[str(testcase)] = _flatten_numeric_values(values)
-    return result, tolerance
+        return {}
+    values = baselines.get(testcase, {})
+    return _flatten_numeric_values(values) if isinstance(values, dict) else {}
 
 
 def compare_build(build_dir: Path, golden_dir: Path, report_dir: Path | None = None) -> Dict[str, Any]:
@@ -100,13 +109,22 @@ def compare_build(build_dir: Path, golden_dir: Path, report_dir: Path | None = N
 
     for golden_file in sorted(golden_dir.glob("CHIP_*.json")):
         chip_name = golden_file.stem
-        baselines, tolerance = _load_golden(golden_file)
-        for testcase, golden_metrics in baselines.items():
+        payload, tolerance = _load_golden(golden_file)
+        testcases = payload.get("testcases", [])
+        if not isinstance(testcases, list):
+            testcases = []
+        for testcase in testcases:
+            testcase = str(testcase)
             stats_path = build_dir / "RESULTS" / "simulation" / chip_name / testcase / "stats.txt"
             actual_metrics = parse_stats(stats_path)
-            for metric, golden_value in sorted(golden_metrics.items()):
+            golden_metrics = _baseline_metrics(payload, testcase)
+            for metric in _configured_metrics(payload, testcase):
+                golden_value = next((golden_metrics[alias] for alias in _metric_aliases(metric) if alias in golden_metrics), None)
                 actual_value = next((actual_metrics[alias] for alias in _metric_aliases(metric) if alias in actual_metrics), None)
-                if actual_value is None:
+                if golden_value is None:
+                    status = "NO_BASELINE"
+                    deviation = None
+                elif actual_value is None:
                     status = "MISSING_ACTUAL"
                     deviation = None
                 elif golden_value == 0:
@@ -127,7 +145,7 @@ def compare_build(build_dir: Path, golden_dir: Path, report_dir: Path | None = N
                     "status": status,
                 })
 
-        if not baselines:
+        if not testcases:
             rows.append({
                 "chip_name": chip_name,
                 "testcase": "*",
