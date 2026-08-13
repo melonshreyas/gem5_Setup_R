@@ -62,6 +62,112 @@ STATS_METRIC_PATTERNS = {
     "hostMemory": re.compile(r"^hostMemory\s+([0-9.eE+-]+)", re.MULTILINE),
 }
 
+EXTRA_CLUSTER_METRIC_PATTERNS = {
+    "l1dcache.overallMisses_total": re.compile(
+        r"^board\.cache_hierarchy\.clusters(?P<cluster>\d+)\.l1dcache\.overallMisses::total\s+([0-9.eE+-]+)",
+        re.MULTILINE,
+    ),
+    "l1dcache.overallAccesses_total": re.compile(
+        r"^board\.cache_hierarchy\.clusters(?P<cluster>\d+)\.l1dcache\.overallAccesses::total\s+([0-9.eE+-]+)",
+        re.MULTILINE,
+    ),
+    "l1dcache.writebacks_total": re.compile(
+        r"^board\.cache_hierarchy\.clusters(?P<cluster>\d+)\.l1dcache\.writebacks::total\s+([0-9.eE+-]+)",
+        re.MULTILINE,
+    ),
+    "l1dcache.demandMshrHits_total": re.compile(
+        r"^board\.cache_hierarchy\.clusters(?P<cluster>\d+)\.l1dcache\.demandMshrHits::total\s+([0-9.eE+-]+)",
+        re.MULTILINE,
+    ),
+    "l1dcache.overallMshrHits_total": re.compile(
+        r"^board\.cache_hierarchy\.clusters(?P<cluster>\d+)\.l1dcache\.overallMshrHits::total\s+([0-9.eE+-]+)",
+        re.MULTILINE,
+    ),
+    "l1dcache.demandMshrMisses_total": re.compile(
+        r"^board\.cache_hierarchy\.clusters(?P<cluster>\d+)\.l1dcache\.demandMshrMisses::total\s+([0-9.eE+-]+)",
+        re.MULTILINE,
+    ),
+    "l1dcache.overallMshrMisses_total": re.compile(
+        r"^board\.cache_hierarchy\.clusters(?P<cluster>\d+)\.l1dcache\.overallMshrMisses::total\s+([0-9.eE+-]+)",
+        re.MULTILINE,
+    ),
+    "l1dcache.replacements": re.compile(
+        r"^board\.cache_hierarchy\.clusters(?P<cluster>\d+)\.l1dcache\.replacements\s+([0-9.eE+-]+)",
+        re.MULTILINE,
+    ),
+    "l1dcache.prefetcher.pfIssued": re.compile(
+        r"^board\.cache_hierarchy\.clusters(?P<cluster>\d+)\.l1dcache\.prefetcher\.pfIssued\s+([0-9.eE+-]+)",
+        re.MULTILINE,
+    ),
+    "l1dcache.prefetcher.pfUseful": re.compile(
+        r"^board\.cache_hierarchy\.clusters(?P<cluster>\d+)\.l1dcache\.prefetcher\.pfUseful\s+([0-9.eE+-]+)",
+        re.MULTILINE,
+    ),
+    "l1dcache.prefetcher.pfUsefulButMiss": re.compile(
+        r"^board\.cache_hierarchy\.clusters(?P<cluster>\d+)\.l1dcache\.prefetcher\.pfUsefulButMiss\s+([0-9.eE+-]+)",
+        re.MULTILINE,
+    ),
+    "l1icache.replacements": re.compile(
+        r"^board\.cache_hierarchy\.clusters(?P<cluster>\d+)\.l1icache\.replacements\s+([0-9.eE+-]+)",
+        re.MULTILINE,
+    ),
+    "l1icache.prefetcher.pfIssued": re.compile(
+        r"^board\.cache_hierarchy\.clusters(?P<cluster>\d+)\.l1icache\.prefetcher\.pfIssued\s+([0-9.eE+-]+)",
+        re.MULTILINE,
+    ),
+    "l1icache.prefetcher.pfUseful": re.compile(
+        r"^board\.cache_hierarchy\.clusters(?P<cluster>\d+)\.l1icache\.prefetcher\.pfUseful\s+([0-9.eE+-]+)",
+        re.MULTILINE,
+    ),
+    "l1icache.prefetcher.pfUsefulButMiss": re.compile(
+        r"^board\.cache_hierarchy\.clusters(?P<cluster>\d+)\.l1icache\.prefetcher\.pfUsefulButMiss\s+([0-9.eE+-]+)",
+        re.MULTILINE,
+    ),
+    "l2_bus.pktCount_total": re.compile(
+        r"^board\.cache_hierarchy\.clusters(?P<cluster>\d+)\.l2_bus\.pktCount::total\s+([0-9.eE+-]+)",
+        re.MULTILINE,
+    ),
+    "l2cache.demandMisses_total": re.compile(
+        r"^board\.cache_hierarchy\.clusters(?P<cluster>\d+)\.l2cache\.demandMisses::total\s+([0-9.eE+-]+)",
+        re.MULTILINE,
+    ),
+    "l2cache.overallMisses_total": re.compile(
+        r"^board\.cache_hierarchy\.clusters(?P<cluster>\d+)\.l2cache\.overallMisses::total\s+([0-9.eE+-]+)",
+        re.MULTILINE,
+    ),
+    "l2cache.replacements": re.compile(
+        r"^board\.cache_hierarchy\.clusters(?P<cluster>\d+)\.l2cache\.replacements\s+([0-9.eE+-]+)",
+        re.MULTILINE,
+    ),
+}
+
+EXTRA_CORE_GENERATOR_METRICS = (
+    "numPackets",
+    "numRetries",
+    "totalReads",
+    "totalWrites",
+    "readBW",
+    "writeBW",
+)
+
+# Extra cluster/generator metrics are testcase-specific and can be noisy for
+# non-cache flows, so only collect them for relevant testcase names.
+EXTRA_METRICS_TESTCASES = {
+    "smoke_test_cache_materials",
+}
+
+
+def _parse_stat_number(value_text: str) -> Any:
+    """Convert a stats token to int/float when possible."""
+    token = str(value_text).strip()
+    try:
+        return int(token)
+    except ValueError:
+        try:
+            return float(token)
+        except ValueError:
+            return token
+
 
 class SmokeLogger:
     """Simple UVM-style logger with WARNING, DEBUG, ERROR, and FATAL helpers."""
@@ -480,7 +586,7 @@ def should_skip_build(repo_dir: Path, gem5_binary: Path, logger: SmokeLogger) ->
     return False
 
 
-def read_stats_metrics(stats_path: Path) -> Dict[str, Any]:
+def read_stats_metrics(stats_path: Path, testcase_name: Optional[str] = None) -> Dict[str, Any]:
     """Extract useful metrics from a gem5 stats file.
     These values are later included in the JSON and HTML summaries.
     """
@@ -492,14 +598,33 @@ def read_stats_metrics(stats_path: Path) -> Dict[str, Any]:
     for key, pattern in STATS_METRIC_PATTERNS.items():
         match = pattern.search(content)
         if match:
-            value_text = match.group(1)
-            try:
-                metrics[key] = int(value_text)
-            except ValueError:
-                try:
-                    metrics[key] = float(value_text)
-                except ValueError:
-                    metrics[key] = value_text
+            metrics[key] = _parse_stat_number(match.group(1))
+
+    testcase_tag = str(testcase_name or "").strip()
+    if testcase_tag in EXTRA_METRICS_TESTCASES:
+        # Collect cache hierarchy metrics for clusters0..N when available.
+        for metric_name, pattern in EXTRA_CLUSTER_METRIC_PATTERNS.items():
+            for match in pattern.finditer(content):
+                cluster = match.group("cluster")
+                metrics[f"clusters{cluster}.{metric_name}"] = _parse_stat_number(match.group(2))
+
+        # Collect per-core generator metrics and aggregated values for cores0/1/2/3.
+        for metric_name in EXTRA_CORE_GENERATOR_METRICS:
+            pattern = re.compile(
+                rf"^board\.processor\.cores(?P<core>\d+)\.generator\.{re.escape(metric_name)}\s+([0-9.eE+-]+)",
+                re.MULTILINE,
+            )
+            per_core_values: Dict[int, Any] = {}
+            for match in pattern.finditer(content):
+                core_idx = int(match.group("core"))
+                value = _parse_stat_number(match.group(2))
+                per_core_values[core_idx] = value
+                metrics[f"board.processor.cores{core_idx}.generator.{metric_name}"] = value
+
+            if per_core_values and all(isinstance(v, (int, float)) for v in per_core_values.values()):
+                core_sum = float(sum(float(v) for v in per_core_values.values()))
+                metrics[f"board.processor.cores0/1/2/3.generator.{metric_name}"] = core_sum
+                metrics[f"board.processor.cores0_to_n.generator.{metric_name}.sum"] = core_sum
     return metrics
 
 
@@ -1076,7 +1201,7 @@ def simulate_gem5(
     simulation_started = time.perf_counter()
     completed = run_command(command, cwd=repo_dir, logger=logger, allow_failure=True, log_file=simulation_log)
     simulation_runtime_seconds = round(time.perf_counter() - simulation_started, 3)
-    stats_metrics = read_stats_metrics(resolved_outdir / "stats.txt")
+    stats_metrics = read_stats_metrics(resolved_outdir / "stats.txt", testcase_name=case_name)
     return {
         "chip": chip_name,
         "testcase_name": case_name,
