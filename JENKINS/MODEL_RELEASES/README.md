@@ -52,6 +52,14 @@ MODEL_RELEASES/
 
 The unit folder is reused. Version folders are immutable: an existing non-empty generated version is never overwritten.
 
+Every completed release is also recorded in the aggregate index:
+
+```text
+/Users/diya/Documents/JENKINS/HISTORY/MODEL_RELEASES/model_releases.json
+```
+
+The index contains one entry per model-unit/version release, including summary, fixes, branch, commit ID, selected chips, testcase filter, compile information, simulation results, report path, and release status. Re-running an existing version replaces only its matching index entry; normal version creation always appends the next generated version.
+
 ## Model Unit Names
 
 The Jenkins dropdown and Python validator use these exact POWER9-oriented names:

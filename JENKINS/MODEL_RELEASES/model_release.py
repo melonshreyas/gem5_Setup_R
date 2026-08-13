@@ -18,6 +18,7 @@ from model_release_email import send_release_report_email
 from model_release_html import write_release_report
 
 RELEASE_ROOT = Path("/Users/diya/Documents/JENKINS/HISTORY/MODEL_RELEASES")
+RELEASE_INDEX_PATH = RELEASE_ROOT / "model_releases.json"
 DEFAULT_REPO_URL = "https://github.com/melonshreyas/gem5_Setup_R.git"
 ALLOWED_MODEL_UNITS = {
     "IFU",
@@ -137,6 +138,36 @@ def next_release_version(unit_dir: Path, model_unit_name: str, create_unit_dir: 
             if match:
                 numbers.append(int(match.group(1)))
     return f"{model_unit_name}_{max(numbers, default=0) + 1}"
+
+
+def update_release_index(manifest: Dict[str, Any]) -> None:
+    """Append one completed release to the persistent model_releases.json index."""
+    RELEASE_ROOT.mkdir(parents=True, exist_ok=True)
+    if RELEASE_INDEX_PATH.exists():
+        try:
+            index = json.loads(RELEASE_INDEX_PATH.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            index = {}
+    else:
+        index = {}
+    if not isinstance(index, dict):
+        index = {}
+
+    releases = index.get("releases", [])
+    if not isinstance(releases, list):
+        releases = []
+    release_key = (manifest.get("model_unit_name"), manifest.get("version"))
+    releases = [
+        item for item in releases
+        if not isinstance(item, dict)
+        or (item.get("model_unit_name"), item.get("version")) != release_key
+    ]
+    releases.append(manifest)
+    releases.sort(key=lambda item: (str(item.get("model_unit_name", "")), str(item.get("version", ""))))
+    index["updated_at"] = datetime.now(timezone.utc).isoformat()
+    index["total_releases"] = len(releases)
+    index["releases"] = releases
+    RELEASE_INDEX_PATH.write_text(json.dumps(index, indent=2) + "\n", encoding="utf-8")
 
 
 def dry_run_release(args: argparse.Namespace) -> int:
@@ -289,7 +320,9 @@ def collect_release(args: argparse.Namespace) -> Path:
     )
     report_path = write_release_report(release_dir, manifest)
     manifest["report_file"] = str(report_path)
+    manifest["release_index_file"] = str(RELEASE_INDEX_PATH)
     (release_dir / "release_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    update_release_index(manifest)
 
     if args.send_email:
         sent = send_release_report_email(

@@ -190,6 +190,18 @@ pipeline {
                     test -s "$RELEASE_DIR/RELEASE_NOTES.md"
                     test -s "$RELEASE_DIR/release_report.html"
                     "$PYTHON_BIN" -m json.tool "$RELEASE_DIR/release_manifest.json" >/dev/null
+                    "$PYTHON_BIN" - "$RELEASE_DIR/release_manifest.json" <<'PY'
+import json
+import sys
+
+manifest_path = sys.argv[1]
+with open(manifest_path, encoding="utf-8") as manifest_file:
+    manifest = json.load(manifest_file)
+
+for field_name in ("summary", "fixes"):
+    if not str(manifest.get(field_name, "")).strip():
+        raise SystemExit(f"RELEASE BLOCKED: manifest field '{field_name}' is empty.")
+PY
                 '''
             }
         }
@@ -206,6 +218,7 @@ pipeline {
                     RELEASE_DIR=$(find "$RELEASE_ROOT/$MODEL_UNIT_NAME" -mindepth 1 -maxdepth 1 -type d -name "${MODEL_UNIT_NAME}_*" -exec basename {} \; | awk -F_ '{print $NF "\t" $0}' | sort -n | tail -n 1 | cut -f2)
                     RELEASE_DIR="$RELEASE_ROOT/$MODEL_UNIT_NAME/$RELEASE_DIR"
                     cp -R "$RELEASE_DIR/." release_artifacts/
+                    cp "$RELEASE_ROOT/model_releases.json" release_artifacts/model_releases.json
                 '''
                 archiveArtifacts artifacts: 'release_artifacts/**/*.json, release_artifacts/**/*.md, release_artifacts/**/*.html', allowEmptyArchive: false
             }
