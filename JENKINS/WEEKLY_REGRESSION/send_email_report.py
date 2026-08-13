@@ -37,7 +37,7 @@ def send_history_report_email(
     smtp_port: int = 587,
     sender_email: Optional[str] = None,
     sender_password: Optional[str] = None,
-    subject: str = "gem5 Smoke Report",
+    subject: str = "gem5 Weekly Regression Report",
 ) -> bool:
     """Send the HTML report as an email attachment.
     It builds an email message and attempts to deliver it through SMTP.
@@ -62,9 +62,9 @@ def send_history_report_email(
 
     message = EmailMessage()
     message["Subject"] = subject
-    message["From"] = sender_email or "smoke-report@example.com"
+    message["From"] = sender_email or "weekly-regression-report@example.com"
     message["To"] = ", ".join(recipients)
-    message.set_content("See the attached gem5 smoke history report.")
+    message.set_content("See the attached gem5 weekly regression history report.")
     message.add_attachment(
         report_path.read_bytes(),
         maintype="text",
@@ -109,7 +109,7 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Recipient email address. Repeat the flag for multiple recipients.",
     )
-    parser.add_argument("--subject", default="gem5 Smoke Report", help="Email subject.")
+    parser.add_argument("--subject", default="gem5 Weekly Regression Report", help="Email subject.")
     return parser.parse_args()
 
 

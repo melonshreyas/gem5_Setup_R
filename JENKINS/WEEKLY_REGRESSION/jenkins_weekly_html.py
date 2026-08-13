@@ -408,10 +408,10 @@ def generate_weekly_results_json(output_dir: Path, logger: Any) -> None:
   }
   report_path = output_dir / "RESULTS" / "weekly_results.json"
   report_path.write_text(
-    json.dumps(_build_report_payload("Smoke Results", summary_fields, rows), indent=2),
+    json.dumps(_build_report_payload("Weekly Regression Results", summary_fields, rows), indent=2),
     encoding="utf-8",
   )
-  logger.warning(f"Wrote smoke JSON report: {report_path}")
+  logger.warning(f"Wrote weekly regression JSON report: {report_path}")
 
 
 def generate_weekly_results_html(output_dir: Path, logger: Any) -> None:
@@ -439,11 +439,11 @@ def generate_weekly_results_html(output_dir: Path, logger: Any) -> None:
         "Binary Path": summary.get("compilation", {}).get("binary_path", "N/A") if isinstance(summary.get("compilation", {}), dict) else "N/A",
         "Compile Log": summary.get("compilation", {}).get("log_file", "N/A") if isinstance(summary.get("compilation", {}), dict) else "N/A",
     }
-    html_text = render_weekly_results_html("Smoke Results", summary_fields, rows)
+    html_text = render_weekly_results_html("Weekly Regression Results", summary_fields, rows)
     report_path = output_dir / "RESULTS" / "weekly_results.html"
     (output_dir / "RESULTS" / _REPORT_CSS_FILENAME).write_text(_REPORT_CSS, encoding="utf-8")
     report_path.write_text(html_text, encoding="utf-8")
-    logger.warning(f"Wrote smoke HTML report: {report_path}")
+    logger.warning(f"Wrote weekly regression HTML report: {report_path}")
 
 
 def generate_jenkins_history_weekly_results_html(history_dir: Path, logger: Any, limit: int = 30) -> None:
@@ -509,7 +509,7 @@ def generate_jenkins_history_weekly_results_html(history_dir: Path, logger: Any,
         "Rows Included": len(selected_rows),
     }
 
-    html_text = render_weekly_results_html("Jenkins History Smoke Results", summary_fields, selected_rows)
+    html_text = render_weekly_results_html("Jenkins History Weekly Regression Results", summary_fields, selected_rows)
     report_path = history_dir / "jenkins_history_weekly_results.html"
     (history_dir / _REPORT_CSS_FILENAME).write_text(_REPORT_CSS, encoding="utf-8")
     report_path.write_text(html_text, encoding="utf-8")
@@ -581,7 +581,7 @@ def generate_jenkins_history_weekly_results_json(history_dir: Path, logger: Any,
 
     report_path = history_dir / "jenkins_history_weekly_results.json"
     report_path.write_text(
-        json.dumps(_build_report_payload("Jenkins History Smoke Results", summary_fields, selected_rows), indent=2),
+        json.dumps(_build_report_payload("Jenkins History Weekly Regression Results", summary_fields, selected_rows), indent=2),
         encoding="utf-8",
     )
     logger.warning(f"Wrote Jenkins history JSON report: {report_path}")

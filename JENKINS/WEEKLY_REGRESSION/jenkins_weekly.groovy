@@ -308,7 +308,7 @@ pipeline {
                 includes: '**/*',
                 reportDir: '/Users/diya/Documents/JENKINS/HISTORY/WEEKLY_REGRESSION',
                 reportFiles: 'jenkins_history_weekly_results.html',
-                reportName: 'Smoke History Report'
+                reportName: 'Weekly Regression History Report'
             ])
         }
 
