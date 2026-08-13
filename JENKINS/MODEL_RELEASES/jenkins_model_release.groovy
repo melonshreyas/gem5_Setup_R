@@ -134,7 +134,6 @@ pipeline {
                     set -eu
                     # Default optional params to empty/false so `set -u` cannot fail if a
                     # build ran before a newly-added parameter was registered on the job.
-                    : "${CHIP_CONFIGURATION:=}"
                     : "${DRY_RUN:=false}"
                     : "${SEND_EMAIL:=false}"
                     : "${SMTP_SERVER:=}"
@@ -151,9 +150,6 @@ pipeline {
                         --fixes "$FIXES"
                         --repo-url "$REPO_URL"
                     )
-                    if [ -n "$CHIP_CONFIGURATION" ]; then
-                        ARGS+=(--chip-configuration "$CHIP_CONFIGURATION")
-                    fi
                     if [ "$DRY_RUN" = "true" ]; then
                         ARGS+=(--dry-run)
                     fi
