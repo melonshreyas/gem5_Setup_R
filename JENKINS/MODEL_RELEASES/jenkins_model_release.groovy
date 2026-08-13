@@ -114,7 +114,9 @@ pipeline {
             steps {
                 sh '''
                     set -eu
-                    mkdir -p "$RELEASE_ROOT"
+                    if [ ! -d "$RELEASE_ROOT" ]; then
+                        mkdir -p "$RELEASE_ROOT"
+                    fi
                     "$PYTHON_BIN" --version
                     test -f "$RELEASE_SCRIPT"
                 '''
