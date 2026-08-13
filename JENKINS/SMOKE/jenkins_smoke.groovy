@@ -31,10 +31,12 @@ pipeline {
             choices: ['opt', 'debug'],
             description: 'gem5 build target to compile.'
         )
-        string(
+        // NOTE: chip names here are static seed values — add new chips to this list manually when chip_configuration.json changes.
+        // The Discover Chips stage auto-updates these choices from the second build onwards.
+        choice(
             name: 'CHIP_NAME',
-            defaultValue: '',
-            description: 'Optional chip name to run. Leave empty to run the selected workflow default.'
+            choices: ['ALL', 'CHIP_1', 'CHIP_2', 'CHIP_3'],
+            description: 'Chip to run. ALL runs every chip in chip_configuration.json. Discover Chips stage updates this list automatically.'
         )
         booleanParam(
             name: 'SKIP_COMPILATION',
@@ -134,6 +136,53 @@ pipeline {
             }
         }
 
+        stage('Discover Chips') {
+            steps {
+                script {
+                    // Read chip names from chip_configuration.json and update CHIP_NAME choices for the next build.
+                    def chipConfigPath = params.CHIP_CONFIGURATION?.trim()
+                        ? (params.CHIP_CONFIGURATION.startsWith('/') ? params.CHIP_CONFIGURATION : "${env.WORKSPACE}/${params.CHIP_CONFIGURATION}")
+                        : env.SMOKE_CONFIG
+
+                    def chipNamesRaw = sh(
+                        script: "${env.PYTHON_BIN} -c \"import json; cfg=json.load(open('${chipConfigPath}')); print('\\n'.join(['ALL']+sorted(cfg.keys())))\"",
+                        returnStdout: true
+                    ).trim()
+
+                    def chipList = chipNamesRaw.split('\n').toList()
+                    echo "[Pipeline] Available chips in ${chipConfigPath}:"
+                    chipList.each { echo "[Pipeline]   - ${it}" }
+
+                    // Update the CHIP_NAME parameter choices so future builds show a dropdown.
+                    properties([
+                        parameters([
+                            string(name: 'BRANCH', defaultValue: params.BRANCH ?: 'stable',
+                                description: 'Git branch to check out before running the smoke workflow.'),
+                            string(name: 'INPUT_DIR', defaultValue: '',
+                                description: 'Root directory of the gem5 repository checkout. Leave empty to use the Jenkins workspace.'),
+                            string(name: 'OUTPUT_DIR', defaultValue: '',
+                                description: 'Optional output directory for the smoke run. Leave empty to let the script auto-create one.'),
+                            string(name: 'CHIP_CONFIGURATION', defaultValue: '',
+                                description: 'Absolute path to chip_configuration.json. Leave empty to use JENKINS/SMOKE/chip_configuration.json inside the workspace.'),
+                            choice(name: 'COMPILE_TARGET', choices: ['opt', 'debug'],
+                                description: 'gem5 build target to compile.'),
+                            choice(name: 'CHIP_NAME', choices: chipList,
+                                description: 'Chip to run. Populated automatically from chip_configuration.json. Select ALL to run every chip.'),
+                            booleanParam(name: 'SKIP_COMPILATION', defaultValue: false,
+                                description: 'Skip the compilation stage and reuse the existing build if possible.'),
+                            booleanParam(name: 'SKIP_SIMULATION', defaultValue: false,
+                                description: 'Skip simulation but still generate the summary and report files.'),
+                            booleanParam(name: 'DRY_RUN', defaultValue: false,
+                                description: 'Print the planned commands without executing them.'),
+                            booleanParam(name: 'SEND_EMAIL', defaultValue: false,
+                                description: 'Send the generated history report by email after the run finishes.')
+                        ])
+                    ])
+                    echo '[Pipeline] CHIP_NAME parameter updated with chip choices for the next build.'
+                }
+            }
+        }
+
         stage('Run Smoke Workflow') {
             steps {
                 script {
@@ -153,7 +202,7 @@ pipeline {
                     echo "[Pipeline] Output directory: ${outputDir}"
                     echo "[Pipeline] Smoke script: ${smokeScript}"
                     echo "[Pipeline] Compile target: ${params.COMPILE_TARGET}"
-                    echo "[Pipeline] Chip name: ${params.CHIP_NAME ?: 'default'}"
+                    echo "[Pipeline] Chip name: ${params.CHIP_NAME ?: 'ALL'}"
                     echo "[Pipeline] Skip compilation: ${params.SKIP_COMPILATION}"
                     echo "[Pipeline] Skip simulation: ${params.SKIP_SIMULATION}"
                     echo "[Pipeline] Dry run: ${params.DRY_RUN}"
@@ -173,9 +222,13 @@ pipeline {
                         cliArgs << outputDir
                     }
 
-                    if (params.CHIP_NAME?.trim()) {
+                    // Pass CHIP_NAME to the script; ALL tells the script to run every configured chip.
+                    if (params.CHIP_NAME?.trim() && params.CHIP_NAME.trim().toUpperCase() != 'ALL') {
                         cliArgs << "--chip-name"
-                        cliArgs << params.CHIP_NAME
+                        cliArgs << params.CHIP_NAME.trim()
+                    } else {
+                        cliArgs << "--chip-name"
+                        cliArgs << "ALL"
                     }
 
                     if (params.SKIP_COMPILATION) {
