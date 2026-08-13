@@ -836,12 +836,24 @@ def select_chips(
     if not isinstance(chip_config, dict):
         return []
 
-    normalized_names = [str(name).strip() for name in (chip_names or []) if str(name).strip()]
-    if not normalized_names:
-        logger.fatal("No chip names were provided. Please pass one or more --chip-name values.")
-        return []
+    # Accept both list-style argparse values and plain strings for resilience.
+    raw_names: List[Any] = []
+    if chip_names is None:
+        raw_names = []
+    elif isinstance(chip_names, str):
+        raw_names = [chip_names]
+    else:
+        raw_names = list(chip_names)
 
-    if any(name.upper() == "ALL" for name in normalized_names):
+    normalized_names: List[str] = []
+    for raw_name in raw_names:
+        for token in str(raw_name).split(","):
+            cleaned = token.strip()
+            if cleaned:
+                normalized_names.append(cleaned)
+
+    # No explicit chip names means "run all chips".
+    if not normalized_names or any(name.upper() == "ALL" for name in normalized_names):
         selected_names = [name for name in chip_config.keys() if isinstance(chip_config[name], dict)]
         if not selected_names:
             logger.fatal("No chip entries were found in the chip configuration.")
