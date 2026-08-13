@@ -59,10 +59,11 @@ pipeline {
     }
 
     environment {
+        // Homebrew bin must be explicit — Jenkins runs with a minimal PATH that omits it.
+        PATH = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${env.PATH}"
         PYTHON_BIN = 'python3'
         REPO_ROOT = "${env.WORKSPACE}"
         SMOKE_REPO_URL = 'https://github.com/melonshreyas/gem5_Setup_R.git'
-        SMOKE_LOCAL_REPO = '/Users/diya/Documents/gem5_Setup_R'
         SMOKE_INPUT_DIR = "${env.WORKSPACE}"
         SMOKE_OUTPUT_DIR = "/Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_${env.BUILD_NUMBER}"
         SMOKE_HISTORY_DIR = '/Users/diya/Documents/JENKINS/HISTORY'
@@ -118,11 +119,8 @@ pipeline {
                     mkdir -p "$SMOKE_OUTPUT_DIR"
                     if [ -d "$WORKSPACE/.git" ]; then
                         echo "[Shell] Workspace already contains a Git checkout."
-                    elif [ -d "$SMOKE_LOCAL_REPO/.git" ]; then
-                        echo "[Shell] Cloning from local repository copy: $SMOKE_LOCAL_REPO"
-                        git clone --local --recursive "$SMOKE_LOCAL_REPO" "$WORKSPACE"
                     else
-                        echo "[Shell] Cloning from remote: $SMOKE_REPO_URL"
+                        echo "[Shell] Cloning repository: $SMOKE_REPO_URL"
                         git clone --recursive "$SMOKE_REPO_URL" "$WORKSPACE"
                     fi
                     cd "$WORKSPACE"
