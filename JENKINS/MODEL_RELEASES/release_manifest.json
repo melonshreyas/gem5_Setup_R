@@ -1,0 +1,17 @@
+{
+  "release_name": "",
+  "version": "",
+  "branch": "stable",
+  "commit_id": "",
+  "created_at": "",
+  "owner": "",
+  "status": "draft",
+  "artifacts": [],
+  "validation": {
+    "smoke": "pending",
+    "weekly_regression": "pending",
+    "golden_comparison": "pending",
+    "tolerance_percent": 5.0
+  },
+  "notes": "Populate this manifest for each model release."
+}
