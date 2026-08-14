@@ -67,9 +67,9 @@ pipeline {
         REPO_ROOT = "${env.WORKSPACE}"
         SMOKE_REPO_URL = 'https://github.com/melonshreyas/gem5_Setup_R.git'
         SMOKE_INPUT_DIR = "${env.WORKSPACE}"
-        SMOKE_OUTPUT_DIR = "/Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_${env.BUILD_NUMBER}"
-        SMOKE_HISTORY_DIR = '/Users/diya/Documents/JENKINS/HISTORY/SMOKE'
-        SMOKE_GOLDEN_DIR = '/Users/diya/Documents/JENKINS/HISTORY/GOLDEN/SMOKE'
+        SMOKE_OUTPUT_DIR = "/Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_${env.BUILD_NUMBER}"
+        SMOKE_HISTORY_DIR = '/Users/shreyas/Documents/JENKINS/HISTORY/SMOKE'
+        SMOKE_GOLDEN_DIR = '/Users/shreyas/Documents/JENKINS/HISTORY/GOLDEN/SMOKE'
         SMOKE_CONFIG = "${env.WORKSPACE}/JENKINS/SMOKE/chip_configuration.json"
         SMOKE_SCRIPT = "${env.WORKSPACE}/JENKINS/SMOKE/jenkins_smoke.py"
         BUILD_TAG_VALUE = "${env.BUILD_TAG}"
@@ -303,15 +303,15 @@ pipeline {
             sh '''
                 set +e
                 mkdir -p "$WORKSPACE/htmlreports/smoke_history"
-                cp -f /Users/diya/Documents/JENKINS/HISTORY/SMOKE/jenkins_history_smoke_results.html "$WORKSPACE/htmlreports/smoke_history/"
-                cp -f /Users/diya/Documents/JENKINS/HISTORY/SMOKE/smoke_report.css "$WORKSPACE/htmlreports/smoke_history/"
+                cp -f /Users/shreyas/Documents/JENKINS/HISTORY/SMOKE/jenkins_history_smoke_results.html "$WORKSPACE/htmlreports/smoke_history/"
+                cp -f /Users/shreyas/Documents/JENKINS/HISTORY/SMOKE/smoke_report.css "$WORKSPACE/htmlreports/smoke_history/"
                 OUTPUT_DIR_VALUE="${OUTPUT_DIR:-$SMOKE_OUTPUT_DIR}"
                 mkdir -p "$WORKSPACE/htmlreports/golden_comparison"
                 cp -f "$OUTPUT_DIR_VALUE/RESULTS/golden_comparison/golden_comparison.html" "$WORKSPACE/htmlreports/golden_comparison/"
                 set -e
             '''
             archiveArtifacts(
-                artifacts: '/Users/diya/Documents/JENKINS/SMOKE/**/*.html, /Users/diya/Documents/JENKINS/SMOKE/**/*.json, /Users/diya/Documents/JENKINS/HISTORY/**/*.html, /Users/diya/Documents/JENKINS/HISTORY/**/*.json',
+                artifacts: '/Users/shreyas/Documents/JENKINS/SMOKE/**/*.html, /Users/shreyas/Documents/JENKINS/SMOKE/**/*.json, /Users/shreyas/Documents/JENKINS/HISTORY/**/*.html, /Users/shreyas/Documents/JENKINS/HISTORY/**/*.json',
                 allowEmptyArchive: true
             )
 

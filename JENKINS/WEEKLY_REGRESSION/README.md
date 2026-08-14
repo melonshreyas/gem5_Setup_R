@@ -30,10 +30,10 @@ Run from repository root:
 
 ```bash
 python3 JENKINS/WEEKLY_REGRESSION/jenkins_weekly.py \
-  --input-dir /Users/diya/Documents/JENKINS/WEEKLY_REGRESSION \
-  --output-dir /Users/diya/Documents/JENKINS/WEEKLY_REGRESSION/WEEKLY_BUILD_3 \
+  --input-dir /Users/shreyas/Documents/JENKINS/WEEKLY_REGRESSION \
+  --output-dir /Users/shreyas/Documents/JENKINS/WEEKLY_REGRESSION/WEEKLY_BUILD_3 \
   --branch stable \
-  --chip-configuration /Users/diya/Documents/gem5_Setup_R/JENKINS/WEEKLY_REGRESSION/chip_configuration.json \
+  --chip-configuration /Users/shreyas/Documents/gem5_Setup_R/JENKINS/WEEKLY_REGRESSION/chip_configuration.json \
   --compile opt
 ```
 
@@ -43,10 +43,10 @@ python3 JENKINS/WEEKLY_REGRESSION/jenkins_weekly.py \
 
 ```bash
 python3 JENKINS/WEEKLY_REGRESSION/jenkins_weekly.py \
-  --input-dir /Users/diya/Documents/JENKINS/WEEKLY_REGRESSION \
-  --output-dir /Users/diya/Documents/JENKINS/WEEKLY_REGRESSION/WEEKLY_BUILD_3 \
+  --input-dir /Users/shreyas/Documents/JENKINS/WEEKLY_REGRESSION \
+  --output-dir /Users/shreyas/Documents/JENKINS/WEEKLY_REGRESSION/WEEKLY_BUILD_3 \
   --branch stable \
-  --chip-configuration /Users/diya/Documents/gem5_Setup_R/JENKINS/WEEKLY_REGRESSION/chip_configuration.json \
+  --chip-configuration /Users/shreyas/Documents/gem5_Setup_R/JENKINS/WEEKLY_REGRESSION/chip_configuration.json \
   --compile opt
 ```
 
@@ -54,10 +54,10 @@ python3 JENKINS/WEEKLY_REGRESSION/jenkins_weekly.py \
 
 ```bash
 python3 JENKINS/WEEKLY_REGRESSION/jenkins_weekly.py \
-  --input-dir /Users/diya/Documents/JENKINS/WEEKLY_REGRESSION \
-  --output-dir /Users/diya/Documents/JENKINS/WEEKLY_REGRESSION/WEEKLY_BUILD_3 \
+  --input-dir /Users/shreyas/Documents/JENKINS/WEEKLY_REGRESSION \
+  --output-dir /Users/shreyas/Documents/JENKINS/WEEKLY_REGRESSION/WEEKLY_BUILD_3 \
   --branch stable \
-  --chip-configuration /Users/diya/Documents/gem5_Setup_R/JENKINS/WEEKLY_REGRESSION/chip_configuration.json \
+  --chip-configuration /Users/shreyas/Documents/gem5_Setup_R/JENKINS/WEEKLY_REGRESSION/chip_configuration.json \
   --skip-compilation \
   --skip_simulation
 ```
@@ -66,10 +66,10 @@ python3 JENKINS/WEEKLY_REGRESSION/jenkins_weekly.py \
 
 ```bash
 python3 JENKINS/WEEKLY_REGRESSION/jenkins_weekly.py \
-  --input-dir /Users/diya/Documents/JENKINS/WEEKLY_REGRESSION \
-  --output-dir /Users/diya/Documents/JENKINS/WEEKLY_REGRESSION/WEEKLY_BUILD_3 \
+  --input-dir /Users/shreyas/Documents/JENKINS/WEEKLY_REGRESSION \
+  --output-dir /Users/shreyas/Documents/JENKINS/WEEKLY_REGRESSION/WEEKLY_BUILD_3 \
   --branch stable \
-  --chip-configuration /Users/diya/Documents/gem5_Setup_R/JENKINS/WEEKLY_REGRESSION/chip_configuration.json \
+  --chip-configuration /Users/shreyas/Documents/gem5_Setup_R/JENKINS/WEEKLY_REGRESSION/chip_configuration.json \
   --dry_run
 ```
 
@@ -107,7 +107,7 @@ Example parameters:
 Typical weekly output layout:
 
 ```text
-/Users/diya/Documents/JENKINS/WEEKLY_REGRESSION/
+/Users/shreyas/Documents/JENKINS/WEEKLY_REGRESSION/
 └── WEEKLY_BUILD_<N>/
     ├── build/
     │   └── ALL/
@@ -123,13 +123,13 @@ Typical weekly output layout:
 
 History report files:
 
-- `/Users/diya/Documents/JENKINS/HISTORY/WEEKLY_REGRESSION/jenkins_history_weekly_results.html`
-- `/Users/diya/Documents/JENKINS/HISTORY/WEEKLY_REGRESSION/jenkins_history_weekly_results.json`
-- `/Users/diya/Documents/JENKINS/HISTORY/WEEKLY_REGRESSION/history_results.json`
+- `/Users/shreyas/Documents/JENKINS/HISTORY/WEEKLY_REGRESSION/jenkins_history_weekly_results.html`
+- `/Users/shreyas/Documents/JENKINS/HISTORY/WEEKLY_REGRESSION/jenkins_history_weekly_results.json`
+- `/Users/shreyas/Documents/JENKINS/HISTORY/WEEKLY_REGRESSION/history_results.json`
 
 ## Golden Comparison
 
-Each completed weekly build also runs `JENKINS/compare_golden_results.py` against the per-chip baselines in `/Users/diya/Documents/JENKINS/HISTORY/GOLDEN/WEEKLY_REGRESSION/`.
+Each completed weekly build also runs `JENKINS/compare_golden_results.py` against the per-chip baselines in `/Users/shreyas/Documents/JENKINS/HISTORY/GOLDEN/WEEKLY_REGRESSION/`.
 
 The comparison allows a maximum 5% numeric deviation and writes the following table-oriented reports under `WEEKLY_BUILD_<N>/RESULTS/golden_comparison/`:
 

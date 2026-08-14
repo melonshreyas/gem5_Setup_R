@@ -34,7 +34,7 @@ This information is intended for engineering traceability and process improvemen
 The authoritative release location is:
 
 ```text
-/Users/diya/Documents/JENKINS/HISTORY/MODEL_RELEASES/
+/Users/shreyas/Documents/JENKINS/HISTORY/MODEL_RELEASES/
 ```
 
 Each model unit gets one persistent folder. Each run creates the next numbered version inside that unit folder:
@@ -55,7 +55,7 @@ The unit folder is reused. Version folders are immutable: an existing non-empty 
 Every completed release is also recorded in the aggregate index:
 
 ```text
-/Users/diya/Documents/JENKINS/HISTORY/MODEL_RELEASES/model_releases.json
+/Users/shreyas/Documents/JENKINS/HISTORY/MODEL_RELEASES/model_releases.json
 ```
 
 The index contains one entry per model-unit/version release, including summary, fixes, branch, commit ID, selected chips, testcase filter, compile information, simulation results, report path, and release status. Re-running an existing version replaces only its matching index entry; normal version creation always appends the next generated version.
@@ -197,7 +197,7 @@ Both values are then stored, once validated, in every generated JSON artifact:
 The default configuration is:
 
 ```text
-/Users/diya/Documents/gem5_Setup_R/JENKINS/SMOKE/chip_configuration.json
+/Users/shreyas/Documents/gem5_Setup_R/JENKINS/SMOKE/chip_configuration.json
 ```
 
 Available chips in the current configuration:
@@ -252,7 +252,7 @@ ARCHIVE_RELEASE_ARTIFACTS
 A completed release looks like:
 
 ```text
-/Users/diya/Documents/JENKINS/HISTORY/MODEL_RELEASES/IFU/IFU_1/
+/Users/shreyas/Documents/JENKINS/HISTORY/MODEL_RELEASES/IFU/IFU_1/
 ├── clone.log
 ├── source/
 │   ├── src/
@@ -333,7 +333,7 @@ Do not place real credentials in shell history, source files, or Git. Prefer Jen
 ## Direct Command Example
 
 ```bash
-cd /Users/diya/Documents/gem5_Setup_R
+cd /Users/shreyas/Documents/gem5_Setup_R
 python3 JENKINS/MODEL_RELEASES/model_release.py \
   --model-unit-name IFU \
   --branch stable \
@@ -386,7 +386,7 @@ The terminal prints the same commands and records them in the JSON/log preview. 
 Run checks without cloning or compiling:
 
 ```bash
-cd /Users/diya/Documents/gem5_Setup_R
+cd /Users/shreyas/Documents/gem5_Setup_R
 python3 -m py_compile \
   JENKINS/MODEL_RELEASES/model_release.py \
   JENKINS/MODEL_RELEASES/model_release_html.py \
@@ -426,11 +426,11 @@ The release flow never overwrites an existing version.
 
 ## Current Path Convention
 
-The current local MacBook setup intentionally uses `/Users/diya`:
+The current local MacBook setup intentionally uses `/Users/shreyas`:
 
 ```text
-/Users/diya/Documents/JENKINS/HISTORY/MODEL_RELEASES
-/Users/diya/Documents/gem5_Setup_R/JENKINS/SMOKE/chip_configuration.json
+/Users/shreyas/Documents/JENKINS/HISTORY/MODEL_RELEASES
+/Users/shreyas/Documents/gem5_Setup_R/JENKINS/SMOKE/chip_configuration.json
 ```
 
 ## Development Support

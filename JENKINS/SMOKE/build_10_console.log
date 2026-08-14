@@ -1,7 +1,7 @@
 Started by user SHREYAS S BAGI
 [Pipeline] Start of Pipeline
 [Pipeline] node
-Running on Jenkins in /Users/diya/.jenkins/jobs/SMOKE/workspace
+Running on Jenkins in /Users/shreyas/.jenkins/jobs/SMOKE/workspace
 [Pipeline] {
 [Pipeline] withEnv
 [Pipeline] {
@@ -12,7 +12,7 @@ Running on Jenkins in /Users/diya/.jenkins/jobs/SMOKE/workspace
 [Pipeline] echo
 [2026-08-09T16:57:00.889Z] [Pipeline] Starting checkout stage.
 [Pipeline] echo
-[2026-08-09T16:57:00.913Z] [Pipeline] Workspace: /Users/diya/.jenkins/jobs/SMOKE/workspace
+[2026-08-09T16:57:00.913Z] [Pipeline] Workspace: /Users/shreyas/.jenkins/jobs/SMOKE/workspace
 [Pipeline] echo
 [2026-08-09T16:57:00.938Z] [Pipeline] Branch parameter: stable
 [Pipeline] script
@@ -22,13 +22,13 @@ Running on Jenkins in /Users/diya/.jenkins/jobs/SMOKE/workspace
 [Pipeline] echo
 [2026-08-09T16:57:01.036Z] [Pipeline] SCM checkout not available in this Jenkins context: ‘checkout scm’ is only available when using “Multibranch Pipeline” or “Pipeline script from SCM”
 [Pipeline] dir
-[2026-08-09T16:57:01.062Z] Running in /Users/diya/.jenkins/jobs/SMOKE/workspace
+[2026-08-09T16:57:01.062Z] Running in /Users/shreyas/.jenkins/jobs/SMOKE/workspace
 [Pipeline] {
 [Pipeline] echo
 [2026-08-09T16:57:01.126Z] [Pipeline] Falling back to local workspace inspection.
 [Pipeline] sh
 [2026-08-09T16:57:01.476Z] + pwd
-[2026-08-09T16:57:01.476Z] /Users/diya/.jenkins/jobs/SMOKE/workspace
+[2026-08-09T16:57:01.476Z] /Users/shreyas/.jenkins/jobs/SMOKE/workspace
 [2026-08-09T16:57:01.476Z] + ls -la
 [2026-08-09T16:57:01.476Z] total 592
 [2026-08-09T16:57:01.476Z] drwxr-xr-x  39 diya  staff    1248 Aug  9 21:16 .
@@ -86,13 +86,13 @@ Running on Jenkins in /Users/diya/.jenkins/jobs/SMOKE/workspace
 [2026-08-09T16:57:02.083Z] [Shell] Python executable: python3
 [2026-08-09T16:57:02.083Z] + python3 --version
 [2026-08-09T16:57:02.083Z] Python 3.14.6
-[2026-08-09T16:57:02.083Z] + echo '[Shell] Creating output directory: /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10'
-[2026-08-09T16:57:02.083Z] [Shell] Creating output directory: /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10
-[2026-08-09T16:57:02.083Z] + mkdir -p /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10
-[2026-08-09T16:57:02.083Z] + '[' -d /Users/diya/.jenkins/jobs/SMOKE/workspace/.git ']'
+[2026-08-09T16:57:02.083Z] + echo '[Shell] Creating output directory: /Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_10'
+[2026-08-09T16:57:02.083Z] [Shell] Creating output directory: /Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_10
+[2026-08-09T16:57:02.083Z] + mkdir -p /Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_10
+[2026-08-09T16:57:02.083Z] + '[' -d /Users/shreyas/.jenkins/jobs/SMOKE/workspace/.git ']'
 [2026-08-09T16:57:02.083Z] + echo '[Shell] Workspace already contains a Git checkout.'
 [2026-08-09T16:57:02.083Z] [Shell] Workspace already contains a Git checkout.
-[2026-08-09T16:57:02.083Z] + cd /Users/diya/.jenkins/jobs/SMOKE/workspace
+[2026-08-09T16:57:02.083Z] + cd /Users/shreyas/.jenkins/jobs/SMOKE/workspace
 [2026-08-09T16:57:02.083Z] + echo '[Shell] Updating submodules.'
 [2026-08-09T16:57:02.083Z] [Shell] Updating submodules.
 [2026-08-09T16:57:02.083Z] + git submodule update --init --recursive
@@ -114,13 +114,13 @@ Running on Jenkins in /Users/diya/.jenkins/jobs/SMOKE/workspace
 [Pipeline] echo
 [2026-08-09T16:57:02.674Z] [Pipeline] Preparing smoke workflow arguments.
 [Pipeline] echo
-[2026-08-09T16:57:02.713Z] [Pipeline] Input directory: /Users/diya/Documents/JENKINS/SMOKE
+[2026-08-09T16:57:02.713Z] [Pipeline] Input directory: /Users/shreyas/Documents/JENKINS/SMOKE
 [Pipeline] echo
-[2026-08-09T16:57:02.741Z] [Pipeline] Chip configuration: /Users/diya/.jenkins/jobs/SMOKE/workspace/JENKINS/SMOKE/chip_configuration.json
+[2026-08-09T16:57:02.741Z] [Pipeline] Chip configuration: /Users/shreyas/.jenkins/jobs/SMOKE/workspace/JENKINS/SMOKE/chip_configuration.json
 [Pipeline] echo
-[2026-08-09T16:57:02.765Z] [Pipeline] Output directory: /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10
+[2026-08-09T16:57:02.765Z] [Pipeline] Output directory: /Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_10
 [Pipeline] echo
-[2026-08-09T16:57:02.792Z] [Pipeline] Smoke script: /Users/diya/.jenkins/jobs/SMOKE/workspace/JENKINS/SMOKE/jenkins_smoke.py
+[2026-08-09T16:57:02.792Z] [Pipeline] Smoke script: /Users/shreyas/.jenkins/jobs/SMOKE/workspace/JENKINS/SMOKE/jenkins_smoke.py
 [Pipeline] echo
 [2026-08-09T16:57:02.818Z] [Pipeline] Compile target: opt
 [Pipeline] echo
@@ -134,31 +134,31 @@ Running on Jenkins in /Users/diya/.jenkins/jobs/SMOKE/workspace
 [Pipeline] echo
 [2026-08-09T16:57:02.954Z] [Pipeline] Send email: false
 [Pipeline] echo
-[2026-08-09T16:57:03.010Z] [Pipeline] Running smoke workflow with command: python3 '/Users/diya/.jenkins/jobs/SMOKE/workspace/JENKINS/SMOKE/jenkins_smoke.py' '--input-dir' '/Users/diya/Documents/JENKINS/SMOKE' '--branch' 'stable' '--chip-configuration' '/Users/diya/.jenkins/jobs/SMOKE/workspace/JENKINS/SMOKE/chip_configuration.json' '--compile' 'opt' '--output-dir' '/Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10' '--chip-name' 'CHIP_1'
+[2026-08-09T16:57:03.010Z] [Pipeline] Running smoke workflow with command: python3 '/Users/shreyas/.jenkins/jobs/SMOKE/workspace/JENKINS/SMOKE/jenkins_smoke.py' '--input-dir' '/Users/shreyas/Documents/JENKINS/SMOKE' '--branch' 'stable' '--chip-configuration' '/Users/shreyas/.jenkins/jobs/SMOKE/workspace/JENKINS/SMOKE/chip_configuration.json' '--compile' 'opt' '--output-dir' '/Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_10' '--chip-name' 'CHIP_1'
 [Pipeline] sh
-[2026-08-09T16:57:03.366Z] + python3 /Users/diya/.jenkins/jobs/SMOKE/workspace/JENKINS/SMOKE/jenkins_smoke.py --input-dir /Users/diya/Documents/JENKINS/SMOKE --branch stable --chip-configuration /Users/diya/.jenkins/jobs/SMOKE/workspace/JENKINS/SMOKE/chip_configuration.json --compile opt --output-dir /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10 --chip-name CHIP_1
-[2026-08-09T20:42:45.892Z] [WARNING] Input directory: /Users/diya/Documents/JENKINS/SMOKE
-[2026-08-09T20:42:45.892Z] [WARNING] Output directory: /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10
-[2026-08-09T20:42:45.892Z] [WARNING] Cloning repository into /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10
+[2026-08-09T16:57:03.366Z] + python3 /Users/shreyas/.jenkins/jobs/SMOKE/workspace/JENKINS/SMOKE/jenkins_smoke.py --input-dir /Users/shreyas/Documents/JENKINS/SMOKE --branch stable --chip-configuration /Users/shreyas/.jenkins/jobs/SMOKE/workspace/JENKINS/SMOKE/chip_configuration.json --compile opt --output-dir /Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_10 --chip-name CHIP_1
+[2026-08-09T20:42:45.892Z] [WARNING] Input directory: /Users/shreyas/Documents/JENKINS/SMOKE
+[2026-08-09T20:42:45.892Z] [WARNING] Output directory: /Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_10
+[2026-08-09T20:42:45.892Z] [WARNING] Cloning repository into /Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_10
 [2026-08-09T20:42:45.892Z] [WARNING] Git commit: 094bd5c37fef2fc36bb14d4d577f264376343093
 [2026-08-09T20:42:45.892Z] [WARNING] Git branch: stable
 [2026-08-09T20:42:45.893Z] [WARNING] Pushed by: melonshreyas
 [2026-08-09T20:42:45.893Z] [WARNING] Changed files: none
-[2026-08-09T20:42:45.893Z] [WARNING] Compiling gem5 (opt) inside /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10
-[2026-08-09T20:42:45.893Z] [WARNING] Compile log indicates PASS for gem5.opt: /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/RESULTS/compilation/compile_opt.log
-[2026-08-09T20:42:45.893Z] [WARNING] Compilation complete. Binary: /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/build/ALL/gem5.opt
-[2026-08-09T20:42:45.893Z] [WARNING] Preparing compile directory for CHIP_1: /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/RESULTS/compilation/CHIP_1
-[2026-08-09T20:42:45.893Z] [WARNING] Wrote compilation report: /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/RESULTS/compilation/CHIP_1/results_compilation.json
+[2026-08-09T20:42:45.893Z] [WARNING] Compiling gem5 (opt) inside /Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_10
+[2026-08-09T20:42:45.893Z] [WARNING] Compile log indicates PASS for gem5.opt: /Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/RESULTS/compilation/compile_opt.log
+[2026-08-09T20:42:45.893Z] [WARNING] Compilation complete. Binary: /Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/build/ALL/gem5.opt
+[2026-08-09T20:42:45.893Z] [WARNING] Preparing compile directory for CHIP_1: /Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/RESULTS/compilation/CHIP_1
+[2026-08-09T20:42:45.893Z] [WARNING] Wrote compilation report: /Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/RESULTS/compilation/CHIP_1/results_compilation.json
 [2026-08-09T20:42:45.893Z] [WARNING] Ignoring --workload for CHIP_1/smoke_test_cores_materials; script does not consume this argument.
-[2026-08-09T20:42:45.893Z] [WARNING] Running simulation for CHIP_1/smoke_test_cores_materials with: /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/build/ALL/gem5.opt --outdir=/Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/RESULTS/simulation/CHIP_1/smoke_test_cores_materials --redirect-stdout --redirect-stderr /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/materials/02-Using-gem5/04-cores/cores.py
+[2026-08-09T20:42:45.893Z] [WARNING] Running simulation for CHIP_1/smoke_test_cores_materials with: /Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/build/ALL/gem5.opt --outdir=/Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/RESULTS/simulation/CHIP_1/smoke_test_cores_materials --redirect-stdout --redirect-stderr /Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/materials/02-Using-gem5/04-cores/cores.py
 [2026-08-09T20:42:45.893Z] [WARNING] Ignoring --workload for CHIP_1/smoke_test_cache_materials; script does not consume this argument.
-[2026-08-09T20:42:45.893Z] [WARNING] Running simulation for CHIP_1/smoke_test_cache_materials with: /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/build/ALL/gem5.opt --outdir=/Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/RESULTS/simulation/CHIP_1/smoke_test_cache_materials --redirect-stdout --redirect-stderr /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/materials/02-Using-gem5/05-cache-hierarchies/test-cache.py
+[2026-08-09T20:42:45.893Z] [WARNING] Running simulation for CHIP_1/smoke_test_cache_materials with: /Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/build/ALL/gem5.opt --outdir=/Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/RESULTS/simulation/CHIP_1/smoke_test_cache_materials --redirect-stdout --redirect-stderr /Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/materials/02-Using-gem5/05-cache-hierarchies/test-cache.py
 [2026-08-09T20:42:45.893Z] [WARNING] Ignoring --workload for CHIP_1/smoke_test_memory_materials; script does not consume this argument.
-[2026-08-09T20:42:45.893Z] [WARNING] Running simulation for CHIP_1/smoke_test_memory_materials with: /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/build/ALL/gem5.opt --outdir=/Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/RESULTS/simulation/CHIP_1/smoke_test_memory_materials --redirect-stdout --redirect-stderr /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/materials/02-Using-gem5/06-memory/run-mem.py
+[2026-08-09T20:42:45.893Z] [WARNING] Running simulation for CHIP_1/smoke_test_memory_materials with: /Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/build/ALL/gem5.opt --outdir=/Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/RESULTS/simulation/CHIP_1/smoke_test_memory_materials --redirect-stdout --redirect-stderr /Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/materials/02-Using-gem5/06-memory/run-mem.py
 [2026-08-09T20:42:45.893Z] [WARNING] Ignoring --workload for CHIP_1/smoke_test_full_system_materials; script does not consume this argument.
-[2026-08-09T20:42:45.893Z] [WARNING] Running simulation for CHIP_1/smoke_test_full_system_materials with: /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/build/ALL/gem5.opt --outdir=/Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/RESULTS/simulation/CHIP_1/smoke_test_full_system_materials --redirect-stdout --redirect-stderr /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/materials/02-Using-gem5/07-full-system/x86-fs-kvm-run.py
-[2026-08-09T20:42:45.893Z] [WARNING] Wrote general summary: /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/RESULTS/general_results.json
-[2026-08-09T20:42:45.893Z] [WARNING] Updated history results: /Users/diya/Documents/JENKINS/HISTORY/history_results.json
+[2026-08-09T20:42:45.893Z] [WARNING] Running simulation for CHIP_1/smoke_test_full_system_materials with: /Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/build/ALL/gem5.opt --outdir=/Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/RESULTS/simulation/CHIP_1/smoke_test_full_system_materials --redirect-stdout --redirect-stderr /Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/materials/02-Using-gem5/07-full-system/x86-fs-kvm-run.py
+[2026-08-09T20:42:45.893Z] [WARNING] Wrote general summary: /Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_10/RESULTS/general_results.json
+[2026-08-09T20:42:45.893Z] [WARNING] Updated history results: /Users/shreyas/Documents/JENKINS/HISTORY/history_results.json
 [2026-08-09T20:42:45.893Z] [WARNING] Smoke workflow completed successfully.
 [Pipeline] echo
 [2026-08-09T20:42:45.993Z] [Pipeline] Smoke workflow command completed.
@@ -172,11 +172,11 @@ Running on Jenkins in /Users/diya/.jenkins/jobs/SMOKE/workspace
 [2026-08-09T20:42:46.205Z] Publishing smoke workflow artifacts and reports.
 [Pipeline] archiveArtifacts
 [2026-08-09T20:42:46.264Z] Archiving artifacts
-[2026-08-09T20:42:46.310Z] ‘/Users/diya/Documents/JENKINS/SMOKE/**/*.html’ doesn’t match anything, but ‘**/*.html’ does. Perhaps that’s what you mean?
-[2026-08-09T20:42:46.310Z] No artifacts found that match the file pattern "/Users/diya/Documents/JENKINS/SMOKE/**/*.html, /Users/diya/Documents/JENKINS/SMOKE/**/*.json, /Users/diya/Documents/JENKINS/HISTORY/**/*.html, /Users/diya/Documents/JENKINS/HISTORY/**/*.json". Configuration error?
+[2026-08-09T20:42:46.310Z] ‘/Users/shreyas/Documents/JENKINS/SMOKE/**/*.html’ doesn’t match anything, but ‘**/*.html’ does. Perhaps that’s what you mean?
+[2026-08-09T20:42:46.310Z] No artifacts found that match the file pattern "/Users/shreyas/Documents/JENKINS/SMOKE/**/*.html, /Users/shreyas/Documents/JENKINS/SMOKE/**/*.json, /Users/shreyas/Documents/JENKINS/HISTORY/**/*.html, /Users/shreyas/Documents/JENKINS/HISTORY/**/*.json". Configuration error?
 [Pipeline] publishHTML
 [2026-08-09T20:42:46.340Z] [htmlpublisher] Archiving HTML reports...
-[2026-08-09T20:42:46.342Z] [htmlpublisher] Archiving at BUILD level /Users/diya/Documents/JENKINS/HISTORY to Smoke_20History_20Report
+[2026-08-09T20:42:46.342Z] [htmlpublisher] Archiving at BUILD level /Users/shreyas/Documents/JENKINS/HISTORY to Smoke_20History_20Report
 [2026-08-09T20:42:46.342Z] [htmlpublisher] Copying recursive using current thread
 [Pipeline] }
 [Pipeline] // stage

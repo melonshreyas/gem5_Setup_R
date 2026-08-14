@@ -45,10 +45,10 @@ Run the workflow from the repository root:
 
 ```bash
 python3 JENKINS/SMOKE/jenkins_smoke.py \
-  --input-dir /Users/diya/Documents/JENKINS/SMOKE \
-  --output-dir /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_2 \
+  --input-dir /Users/shreyas/Documents/JENKINS/SMOKE \
+  --output-dir /Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_2 \
   --branch stable \
-  --chip-configuration /Users/diya/Documents/gem5_Setup_R/JENKINS/SMOKE/chip_configuration.json \
+  --chip-configuration /Users/shreyas/Documents/gem5_Setup_R/JENKINS/SMOKE/chip_configuration.json \
   --compile opt
 ```
 
@@ -58,10 +58,10 @@ python3 JENKINS/SMOKE/jenkins_smoke.py \
 
 ```bash
 python3 JENKINS/SMOKE/jenkins_smoke.py \
-  --input-dir /Users/diya/Documents/JENKINS/SMOKE \
-  --output-dir /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_2 \
+  --input-dir /Users/shreyas/Documents/JENKINS/SMOKE \
+  --output-dir /Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_2 \
   --branch stable \
-  --chip-configuration /Users/diya/Documents/gem5_Setup_R/JENKINS/SMOKE/chip_configuration.json \
+  --chip-configuration /Users/shreyas/Documents/gem5_Setup_R/JENKINS/SMOKE/chip_configuration.json \
   --compile opt
 ```
 
@@ -69,10 +69,10 @@ python3 JENKINS/SMOKE/jenkins_smoke.py \
 
 ```bash
 python3 JENKINS/SMOKE/jenkins_smoke.py \
-  --input-dir /Users/diya/Documents/JENKINS/SMOKE \
-  --output-dir /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_2 \
+  --input-dir /Users/shreyas/Documents/JENKINS/SMOKE \
+  --output-dir /Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_2 \
   --branch stable \
-  --chip-configuration /Users/diya/Documents/gem5_Setup_R/JENKINS/SMOKE/chip_configuration.json \
+  --chip-configuration /Users/shreyas/Documents/gem5_Setup_R/JENKINS/SMOKE/chip_configuration.json \
   --skip-compilation \
   --skip_simulation
 ```
@@ -81,10 +81,10 @@ python3 JENKINS/SMOKE/jenkins_smoke.py \
 
 ```bash
 python3 JENKINS/SMOKE/jenkins_smoke.py \
-  --input-dir /Users/diya/Documents/JENKINS/SMOKE \
-  --output-dir /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_2 \
+  --input-dir /Users/shreyas/Documents/JENKINS/SMOKE \
+  --output-dir /Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_2 \
   --branch stable \
-  --chip-configuration /Users/diya/Documents/gem5_Setup_R/JENKINS/SMOKE/chip_configuration.json \
+  --chip-configuration /Users/shreyas/Documents/gem5_Setup_R/JENKINS/SMOKE/chip_configuration.json \
   --dry_run
 ```
 

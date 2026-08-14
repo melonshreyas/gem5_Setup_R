@@ -36,7 +36,7 @@ pipeline {
         PATH = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${env.PATH}"
         PYTHON_BIN = 'python3'
         RELEASE_SCRIPT = "${env.WORKSPACE}/JENKINS/MODEL_RELEASES/model_release.py"
-        RELEASE_ROOT = '/Users/diya/Documents/JENKINS/HISTORY/MODEL_RELEASES'
+        RELEASE_ROOT = '/Users/shreyas/Documents/JENKINS/HISTORY/MODEL_RELEASES'
     }
 
     options {

@@ -67,8 +67,8 @@ pipeline {
         REPO_ROOT = "${env.WORKSPACE}"
         SMOKE_REPO_URL = 'https://github.com/melonshreyas/gem5_Setup_R.git'
         SMOKE_INPUT_DIR = "${env.WORKSPACE}"
-        SMOKE_OUTPUT_DIR = "/Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_${env.BUILD_NUMBER}"
-        SMOKE_HISTORY_DIR = '/Users/diya/Documents/JENKINS/HISTORY/SMOKE'
+        SMOKE_OUTPUT_DIR = "/Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_${env.BUILD_NUMBER}"
+        SMOKE_HISTORY_DIR = '/Users/shreyas/Documents/JENKINS/HISTORY/SMOKE'
         SMOKE_CONFIG = "${env.WORKSPACE}/JENKINS/SMOKE/chip_configuration.json"
         SMOKE_SCRIPT = "${env.WORKSPACE}/JENKINS/SMOKE/jenkins_smoke.py"
         BUILD_TAG_VALUE = "${env.BUILD_TAG}"
@@ -283,7 +283,7 @@ pipeline {
         always {
             echo 'Publishing smoke workflow artifacts and reports.'
             archiveArtifacts(
-                artifacts: '/Users/diya/Documents/JENKINS/SMOKE/**/*.html, /Users/diya/Documents/JENKINS/SMOKE/**/*.json, /Users/diya/Documents/JENKINS/HISTORY/**/*.html, /Users/diya/Documents/JENKINS/HISTORY/**/*.json',
+                artifacts: '/Users/shreyas/Documents/JENKINS/SMOKE/**/*.html, /Users/shreyas/Documents/JENKINS/SMOKE/**/*.json, /Users/shreyas/Documents/JENKINS/HISTORY/**/*.html, /Users/shreyas/Documents/JENKINS/HISTORY/**/*.json',
                 allowEmptyArchive: true
             )
 
@@ -292,7 +292,7 @@ pipeline {
                 alwaysLinkToLastBuild: true,
                 keepAll: true,
                 includes: '**/*',
-                reportDir: '/Users/diya/Documents/JENKINS/HISTORY/SMOKE',
+                reportDir: '/Users/shreyas/Documents/JENKINS/HISTORY/SMOKE',
                 reportFiles: 'jenkins_history_smoke_results.html',
                 reportName: 'Smoke History Report'
             ])

@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional
 from model_release_email import send_release_report_email
 from model_release_html import write_release_report
 
-RELEASE_ROOT = Path("/Users/diya/Documents/JENKINS/HISTORY/MODEL_RELEASES")
+RELEASE_ROOT = Path("/Users/shreyas/Documents/JENKINS/HISTORY/MODEL_RELEASES")
 RELEASE_INDEX_PATH = RELEASE_ROOT / "model_releases.json"
 DEFAULT_REPO_URL = "https://github.com/melonshreyas/gem5_Setup_R.git"
 ALLOWED_MODEL_UNITS = {

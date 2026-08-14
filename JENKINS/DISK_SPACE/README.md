@@ -25,7 +25,7 @@ concrete, timestamped record of where storage is being consumed instead of havin
 
 ```bash
 python3 JENKINS/DISK_SPACE/disk_space_report.py \
-    --input-dir /Users/diya/Documents/JENKINS/HISTORY \
+    --input-dir /Users/shreyas/Documents/JENKINS/HISTORY \
     --max-depth 2
 ```
 

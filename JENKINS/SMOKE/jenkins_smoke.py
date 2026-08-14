@@ -33,10 +33,10 @@ from jenkins_smoke_html import (
 )
 from send_email_report import send_history_report_email
 
-DEFAULT_INPUT_DIR = Path("/Users/diya/Documents/JENKINS/SMOKE")
+DEFAULT_INPUT_DIR = Path("/Users/shreyas/Documents/JENKINS/SMOKE")
 DEFAULT_REPO_URL = "https://github.com/melonshreyas/gem5_Setup_R.git"
-DEFAULT_HISTORY_DIR = Path("/Users/diya/Documents/JENKINS/HISTORY/SMOKE")
-DEFAULT_GOLDEN_DIR = Path("/Users/diya/Documents/JENKINS/HISTORY/GOLDEN/SMOKE")
+DEFAULT_HISTORY_DIR = Path("/Users/shreyas/Documents/JENKINS/HISTORY/SMOKE")
+DEFAULT_GOLDEN_DIR = Path("/Users/shreyas/Documents/JENKINS/HISTORY/GOLDEN/SMOKE")
 COMPILE_ERROR_PATTERNS = (
     r"\berror:\s+",
     r"\bfatal error:\s+",

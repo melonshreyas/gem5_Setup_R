@@ -33,10 +33,10 @@ from jenkins_weekly_html import (
 )
 from send_email_report import send_history_report_email
 
-DEFAULT_INPUT_DIR = Path("/Users/diya/Documents/JENKINS/SMOKE")
+DEFAULT_INPUT_DIR = Path("/Users/shreyas/Documents/JENKINS/SMOKE")
 DEFAULT_REPO_URL = "https://github.com/melonshreyas/gem5_Setup_R.git"
-DEFAULT_HISTORY_DIR = Path("/Users/diya/Documents/JENKINS/HISTORY/WEEKLY_REGRESSION")
-DEFAULT_GOLDEN_DIR = Path("/Users/diya/Documents/JENKINS/HISTORY/GOLDEN/WEEKLY_REGRESSION")
+DEFAULT_HISTORY_DIR = Path("/Users/shreyas/Documents/JENKINS/HISTORY/WEEKLY_REGRESSION")
+DEFAULT_GOLDEN_DIR = Path("/Users/shreyas/Documents/JENKINS/HISTORY/GOLDEN/WEEKLY_REGRESSION")
 COMPILE_ERROR_PATTERNS = (
     r"\berror:\s+",
     r"\bfatal error:\s+",

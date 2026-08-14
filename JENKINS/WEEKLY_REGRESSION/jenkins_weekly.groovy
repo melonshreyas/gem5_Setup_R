@@ -67,8 +67,8 @@ pipeline {
         REPO_ROOT = "${env.WORKSPACE}"
         WEEKLY_REPO_URL = 'https://github.com/melonshreyas/gem5_Setup_R.git'
         WEEKLY_INPUT_DIR = "${env.WORKSPACE}"
-        WEEKLY_OUTPUT_DIR = "/Users/diya/Documents/JENKINS/WEEKLY_REGRESSION/WEEKLY_BUILD_${env.BUILD_NUMBER}"
-        WEEKLY_HISTORY_DIR = '/Users/diya/Documents/JENKINS/HISTORY/WEEKLY_REGRESSION'
+        WEEKLY_OUTPUT_DIR = "/Users/shreyas/Documents/JENKINS/WEEKLY_REGRESSION/WEEKLY_BUILD_${env.BUILD_NUMBER}"
+        WEEKLY_HISTORY_DIR = '/Users/shreyas/Documents/JENKINS/HISTORY/WEEKLY_REGRESSION'
         WEEKLY_CONFIG = "${env.WORKSPACE}/JENKINS/WEEKLY_REGRESSION/chip_configuration.json"
         WEEKLY_SCRIPT = "${env.WORKSPACE}/JENKINS/WEEKLY_REGRESSION/jenkins_weekly.py"
         BUILD_TAG_VALUE = "${env.BUILD_TAG}"
@@ -297,7 +297,7 @@ pipeline {
         always {
             echo 'Publishing smoke workflow artifacts and reports.'
             archiveArtifacts(
-                artifacts: '/Users/diya/Documents/JENKINS/WEEKLY_REGRESSION/**/*.html, /Users/diya/Documents/JENKINS/WEEKLY_REGRESSION/**/*.json, /Users/diya/Documents/JENKINS/HISTORY/**/*.html, /Users/diya/Documents/JENKINS/HISTORY/**/*.json',
+                artifacts: '/Users/shreyas/Documents/JENKINS/WEEKLY_REGRESSION/**/*.html, /Users/shreyas/Documents/JENKINS/WEEKLY_REGRESSION/**/*.json, /Users/shreyas/Documents/JENKINS/HISTORY/**/*.html, /Users/shreyas/Documents/JENKINS/HISTORY/**/*.json',
                 allowEmptyArchive: true
             )
 
@@ -306,7 +306,7 @@ pipeline {
                 alwaysLinkToLastBuild: true,
                 keepAll: true,
                 includes: '**/*',
-                reportDir: '/Users/diya/Documents/JENKINS/HISTORY/WEEKLY_REGRESSION',
+                reportDir: '/Users/shreyas/Documents/JENKINS/HISTORY/WEEKLY_REGRESSION',
                 reportFiles: 'jenkins_history_weekly_results.html',
                 reportName: 'Weekly Regression History Report'
             ])

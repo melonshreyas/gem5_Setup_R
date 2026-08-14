@@ -29,10 +29,10 @@ Run the workflow from the repository root:
 
 ```bash
 python3 JENKINS/SMOKE/jenkins_smoke.py \
-  --input-dir /Users/diya/Documents/JENKINS/SMOKE \
-  --output-dir /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_2 \
+  --input-dir /Users/shreyas/Documents/JENKINS/SMOKE \
+  --output-dir /Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_2 \
   --branch stable \
-  --chip-configuration /Users/diya/Documents/gem5_Setup_R/JENKINS/SMOKE/chip_configuration.json \
+  --chip-configuration /Users/shreyas/Documents/gem5_Setup_R/JENKINS/SMOKE/chip_configuration.json \
   --compile opt
 ```
 
@@ -42,10 +42,10 @@ python3 JENKINS/SMOKE/jenkins_smoke.py \
 
 ```bash
 python3 JENKINS/SMOKE/jenkins_smoke.py \
-  --input-dir /Users/diya/Documents/JENKINS/SMOKE \
-  --output-dir /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_2 \
+  --input-dir /Users/shreyas/Documents/JENKINS/SMOKE \
+  --output-dir /Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_2 \
   --branch stable \
-  --chip-configuration /Users/diya/Documents/gem5_Setup_R/JENKINS/SMOKE/chip_configuration.json \
+  --chip-configuration /Users/shreyas/Documents/gem5_Setup_R/JENKINS/SMOKE/chip_configuration.json \
   --compile opt
 ```
 
@@ -53,10 +53,10 @@ python3 JENKINS/SMOKE/jenkins_smoke.py \
 
 ```bash
 python3 JENKINS/SMOKE/jenkins_smoke.py \
-  --input-dir /Users/diya/Documents/JENKINS/SMOKE \
-  --output-dir /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_2 \
+  --input-dir /Users/shreyas/Documents/JENKINS/SMOKE \
+  --output-dir /Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_2 \
   --branch stable \
-  --chip-configuration /Users/diya/Documents/gem5_Setup_R/JENKINS/SMOKE/chip_configuration.json \
+  --chip-configuration /Users/shreyas/Documents/gem5_Setup_R/JENKINS/SMOKE/chip_configuration.json \
   --skip-compilation \
   --skip_simulation
 ```
@@ -65,10 +65,10 @@ python3 JENKINS/SMOKE/jenkins_smoke.py \
 
 ```bash
 python3 JENKINS/SMOKE/jenkins_smoke.py \
-  --input-dir /Users/diya/Documents/JENKINS/SMOKE \
-  --output-dir /Users/diya/Documents/JENKINS/SMOKE/SMOKE_BUILD_2 \
+  --input-dir /Users/shreyas/Documents/JENKINS/SMOKE \
+  --output-dir /Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_2 \
   --branch stable \
-  --chip-configuration /Users/diya/Documents/gem5_Setup_R/JENKINS/SMOKE/chip_configuration.json \
+  --chip-configuration /Users/shreyas/Documents/gem5_Setup_R/JENKINS/SMOKE/chip_configuration.json \
   --dry_run
 ```
 
@@ -197,7 +197,7 @@ These are updated from each successful run so recent builds can be compared over
 
 After each completed run, `compare_golden_results.py` compares the build's per-testcase `stats.txt` values with the per-chip GOLDEN baselines under:
 
-- `/Users/diya/Documents/JENKINS/HISTORY/GOLDEN/SMOKE/`
+- `/Users/shreyas/Documents/JENKINS/HISTORY/GOLDEN/SMOKE/`
 
 The comparison uses a 5% numeric deviation limit and writes a table report under the build's `RESULTS/golden_comparison/` directory:
 
