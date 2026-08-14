@@ -83,14 +83,20 @@ pipeline {
                 if (!params.DRY_RUN) {
                     sh '''
                         set +e
-                        DISK_SPACE_ROOT="$INPUT_DIR/DISK_SPACE"
-                        LATEST_DIR=$(ls -dt "$DISK_SPACE_ROOT"/DISK_SPACE_* 2>/dev/null | head -n 1)
-                        if [ -n "$LATEST_DIR" ]; then
+                        if [ -n "${OUTPUT_DIR:-}" ]; then
+                            REPORT_DIR="$OUTPUT_DIR"
+                        else
+                            DISK_SPACE_ROOT="$INPUT_DIR/DISK_SPACE"
+                            REPORT_DIR=$(ls -dt "$DISK_SPACE_ROOT"/DISK_SPACE_* 2>/dev/null | head -n 1)
+                        fi
+                        if [ -n "$REPORT_DIR" ] && [ -f "$REPORT_DIR/disk_space_report.html" ]; then
                             mkdir -p "$WORKSPACE/htmlreports/disk_space"
-                            cp -f "$LATEST_DIR/disk_space_report.html" "$WORKSPACE/htmlreports/disk_space/"
-                            cp -f "$LATEST_DIR/disk_space_report.css" "$WORKSPACE/htmlreports/disk_space/"
-                            cp -f "$LATEST_DIR/disk_space_report.json" "$WORKSPACE/htmlreports/disk_space/"
-                            cp -f "$LATEST_DIR/disk_space_tree.txt" "$WORKSPACE/htmlreports/disk_space/"
+                            cp -f "$REPORT_DIR/disk_space_report.html" "$WORKSPACE/htmlreports/disk_space/"
+                            cp -f "$REPORT_DIR/disk_space_report.css" "$WORKSPACE/htmlreports/disk_space/"
+                            cp -f "$REPORT_DIR/disk_space_report.json" "$WORKSPACE/htmlreports/disk_space/"
+                            cp -f "$REPORT_DIR/disk_space_tree.txt" "$WORKSPACE/htmlreports/disk_space/"
+                        else
+                            echo "[DISK_SPACE] No report found at: ${REPORT_DIR:-<empty>}"
                         fi
                         set -e
                     '''
