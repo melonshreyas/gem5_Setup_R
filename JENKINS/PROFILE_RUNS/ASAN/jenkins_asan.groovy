@@ -67,10 +67,10 @@ pipeline {
         REPO_ROOT = "${env.WORKSPACE}"
         ASAN_REPO_URL = 'https://github.com/melonshreyas/gem5_Setup_R.git'
         ASAN_INPUT_DIR = "${env.WORKSPACE}"
-        ASAN_OUTPUT_DIR = "/Users/diya/Documents/gem5_Setup_R/JENKINS/PROFILE_RUNS/ASAN/ASAN_BUILD_${env.BUILD_NUMBER}"
-        ASAN_HISTORY_DIR = '/Users/diya/Documents/gem5_Setup_R/JENKINS/PROFILE_RUNS/ASAN/HISTORY'
+        ASAN_OUTPUT_DIR = "/Users/diya/Documents/JENKINS/PROFILE_RUNS/PERF_RUN/ASAN/ASAN_BUILD_${env.BUILD_NUMBER}"
+        ASAN_HISTORY_DIR = '/Users/diya/Documents/JENKINS/HISTORY/PROFILE_RUNS/ASAN'
         ASAN_CONFIG = "${env.WORKSPACE}/JENKINS/PROFILE_RUNS/ASAN/chip_configuration.json"
-        ASAN_SCRIPT = "${env.WORKSPACE}/JENKINS/PROFILE_RUNS/ASAN/jenkins_smoke.py"
+        ASAN_SCRIPT = "${env.WORKSPACE}/JENKINS/PROFILE_RUNS/ASAN/jenkins_asan.py"
         BUILD_TAG_VALUE = "${env.BUILD_TAG}"
         BUILD_ID_VALUE = "${env.BUILD_ID}"
         JOB_NAME_VALUE = "${env.JOB_NAME}"
@@ -81,7 +81,7 @@ pipeline {
         SENDER_EMAIL = ''
         SENDER_PASSWORD = ''
         SMTP_RECIPIENTS = ''
-        ASAN_OPTIONS = 'detect_leaks=1:abort_on_error=1:halt_on_error=1'
+        ASAN_OPTIONS = 'detect_leaks=1:halt_on_error=1:abort_on_error=1:symbolize=1:log_path=asan_gem5'
     }
 
     options {
@@ -199,7 +199,7 @@ pipeline {
                         ? (chipConfigRaw.startsWith('/') ? chipConfigRaw : "${env.WORKSPACE}/${chipConfigRaw}")
                         : env.ASAN_CONFIG
                     def outputDir = params.OUTPUT_DIR?.trim() ? params.OUTPUT_DIR : env.ASAN_OUTPUT_DIR
-                    def smokeScript = env.ASAN_SCRIPT ?: "${env.WORKSPACE}/JENKINS/PROFILE_RUNS/ASAN/jenkins_smoke.py"
+                    def smokeScript = env.ASAN_SCRIPT ?: "${env.WORKSPACE}/JENKINS/PROFILE_RUNS/ASAN/jenkins_asan.py"
 
                     echo "[Pipeline] Input directory: ${inputDir}"
                     echo "[Pipeline] Chip configuration: ${chipConfig}"

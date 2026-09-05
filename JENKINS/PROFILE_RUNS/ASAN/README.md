@@ -4,32 +4,32 @@ This job builds gem5 with AddressSanitizer, runs the configured simulations, and
 
 ## Files
 
-- `jenkins_smoke.py`: ASAN orchestration, compilation, simulation, and history update.
-- `jenkins_smoke_html.py`: current-run and history report generation.
-- `jenkins_smoke.groovy`: Jenkins Pipeline definition.
+- `jenkins_asan.py`: ASAN orchestration, compilation, simulation, and history update.
+- `jenkins_asan_html.py`: current-run and history report generation.
+- `jenkins_asan.groovy`: Jenkins Pipeline definition.
 - `chip_configuration.json`: chip and testcase definitions.
-- `test_jenkins_smoke.py`: focused workflow tests.
+- `test_jenkins_asan.py`: focused workflow tests.
 
 ## Local Run
 
 From the repository root:
 
 ```bash
-python3 JENKINS/PROFILE_RUNS/ASAN/jenkins_smoke.py \
-  --input-dir /Users/diya/Documents/gem5_Setup_R/JENKINS/PROFILE_RUNS/ASAN \
-  --output-dir /Users/diya/Documents/gem5_Setup_R/JENKINS/PROFILE_RUNS/ASAN/ASAN_BUILD_1 \
+python3 JENKINS/PROFILE_RUNS/ASAN/jenkins_asan.py \
+  --input-dir /Users/diya/Documents/JENKINS/PROFILE_RUNS/PERF_RUN/ASAN \
+  --output-dir /Users/diya/Documents/JENKINS/PROFILE_RUNS/PERF_RUN/ASAN/ASAN_BUILD_1 \
   --branch stable \
   --chip-configuration JENKINS/PROFILE_RUNS/ASAN/chip_configuration.json \
   --compile opt \
   --chip-name ALL
 ```
 
-The compiler command always includes gem5's native `--with-asan` option. ASAN builds are always recompiled so an ordinary cached gem5 binary cannot be mistaken for an instrumented binary.
+The compiler command is `scons build/ALL/gem5.opt --sanitize=address -j16` for an opt build, or `scons build/ALL/gem5.debug --sanitize=address` for a debug build. ASAN builds are always recompiled so an ordinary cached gem5 binary cannot be mistaken for an instrumented binary.
 
 Preview the commands without compiling or simulating:
 
 ```bash
-python3 JENKINS/PROFILE_RUNS/ASAN/jenkins_smoke.py \
+python3 JENKINS/PROFILE_RUNS/ASAN/jenkins_asan.py \
   --output-dir /tmp/gem5-asan-dry-run \
   --branch stable \
   --chip-configuration JENKINS/PROFILE_RUNS/ASAN/chip_configuration.json \
@@ -42,7 +42,7 @@ Useful options include `--compile debug`, `--chip-name CHIP_1`, `--skip-compilat
 
 ## Jenkins Setup
 
-Create a Pipeline job using `JENKINS/PROFILE_RUNS/ASAN/jenkins_smoke.groovy` from SCM. The pipeline accepts `BRANCH`, `INPUT_DIR`, `OUTPUT_DIR`, `CHIP_CONFIGURATION`, `COMPILE_TARGET`, `CHIP_NAME`, `SKIP_COMPILATION`, `SKIP_SIMULATION`, `DRY_RUN`, and `SEND_EMAIL`.
+Create a Pipeline job using `JENKINS/PROFILE_RUNS/ASAN/jenkins_asan.groovy` from SCM. The pipeline accepts `BRANCH`, `INPUT_DIR`, `OUTPUT_DIR`, `CHIP_CONFIGURATION`, `COMPILE_TARGET`, `CHIP_NAME`, `SKIP_COMPILATION`, `SKIP_SIMULATION`, `DRY_RUN`, and `SEND_EMAIL`.
 
 Each simulation uses `ASAN_OPTIONS=detect_leaks=1:halt_on_error=1:abort_on_error=1:symbolize=1:log_path=<case>/asan.log` so sanitizer failures stop the simulation, produce symbolized output, and remain in the captured logs. It publishes only ASAN artifacts.
 
@@ -65,7 +65,7 @@ ASAN_BUILD_<n>/
         └── results_simulation.json
 ```
 
-Persistent history is written under `JENKINS/PROFILE_RUNS/ASAN/HISTORY/`:
+Persistent history is written under `/Users/diya/Documents/JENKINS/HISTORY/PROFILE_RUNS/ASAN/`:
 
 - `history_results.json`
 - `jenkins_history_asan_results.html`

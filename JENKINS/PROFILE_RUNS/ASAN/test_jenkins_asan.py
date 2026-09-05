@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent))
 
-from jenkins_smoke import build_asan_environment, build_simulation_command, expand_simulation_cases
+from jenkins_asan import build_asan_environment, build_simulation_command, expand_simulation_cases
 
 
 class ExpandSimulationCasesTest(unittest.TestCase):

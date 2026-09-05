@@ -136,6 +136,8 @@ AddOption('--with-ubsan', action='store_true',
           help='Build with Undefined Behavior Sanitizer if available')
 AddOption('--with-asan', action='store_true',
           help='Build with Address Sanitizer if available')
+AddOption('--sanitize', action='store', default=None,
+          help='Build with comma-separated sanitizers (address, undefined)')
 AddOption('--with-systemc-tests', action='store_true',
           help='Build systemc tests')
 AddOption('--install-hooks', action='store_true',
@@ -750,12 +752,28 @@ for variant_path in variant_paths:
 
     # Add sanitizers flags
     sanitizers=[]
+    sanitize_option = GetOption('sanitize')
+    if sanitize_option:
+        requested_sanitizers = {
+            sanitizer.strip()
+            for sanitizer in sanitize_option.split(',')
+            if sanitizer.strip()
+        }
+        unsupported_sanitizers = requested_sanitizers - {'address', 'undefined'}
+        if unsupported_sanitizers:
+            error(
+                "Unsupported sanitizer(s): %s. Supported values are address and undefined."
+                % ', '.join(sorted(unsupported_sanitizers))
+            )
+        sanitizers.extend(sorted(requested_sanitizers))
     if GetOption('with_ubsan'):
-        sanitizers.append('undefined')
+        if 'undefined' not in sanitizers:
+            sanitizers.append('undefined')
     if GetOption('with_asan'):
         # Available for gcc >= 5 or llvm >= 3.1 both a requirement
         # by the build system
-        sanitizers.append('address')
+        if 'address' not in sanitizers:
+            sanitizers.append('address')
         suppressions_file = Dir('util').File('lsan-suppressions').get_abspath()
         suppressions_opt = 'suppressions=%s' % suppressions_file
         suppressions_opts = ':'.join([suppressions_opt,

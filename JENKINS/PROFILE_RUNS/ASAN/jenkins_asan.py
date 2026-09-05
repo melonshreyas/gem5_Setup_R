@@ -26,7 +26,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from jenkins_smoke_html import (
+from jenkins_asan_html import (
     generate_jenkins_history_asan_results_html,
     generate_jenkins_history_asan_results_json,
     generate_asan_results_html,
@@ -34,10 +34,13 @@ from jenkins_smoke_html import (
 )
 from send_email_report import send_history_report_email
 
-DEFAULT_INPUT_DIR = Path("/Users/diya/Documents/gem5_Setup_R/JENKINS/PROFILE_RUNS/ASAN")
+DEFAULT_INPUT_DIR = Path("/Users/diya/Documents/JENKINS/PROFILE_RUNS/PERF_RUN/ASAN")
 DEFAULT_REPO_URL = "https://github.com/melonshreyas/gem5_Setup_R.git"
-DEFAULT_HISTORY_DIR = DEFAULT_INPUT_DIR / "HISTORY"
-ASAN_BUILD_FLAG = "--with-asan"
+DEFAULT_HISTORY_DIR = Path("/Users/diya/Documents/JENKINS/HISTORY/PROFILE_RUNS/ASAN")
+DEFAULT_CHIP_CONFIGURATION = Path(__file__).resolve().parent / "chip_configuration.json"
+ASAN_BUILD_FLAG = "--sanitize=address"
+ASAN_BUILD_ARCH = "ALL"
+ASAN_BUILD_JOBS = "-j16"
 ASAN_DEFAULT_OPTIONS = "detect_leaks=1:halt_on_error=1:abort_on_error=1:symbolize=1"
 COMPILE_ERROR_PATTERNS = (
     r"\berror:\s+",
@@ -149,7 +152,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--chip-configuration",
-        default=str(DEFAULT_INPUT_DIR / "chip_configuration.json"),
+        default=str(DEFAULT_CHIP_CONFIGURATION),
         help="Path to a JSON file that contains chip or simulation configuration settings.",
     )
     parser.add_argument(
@@ -425,9 +428,11 @@ def build_asan_environment(log_prefix: Path) -> Dict[str, str]:
     """Build the runtime environment used by each ASAN simulation case."""
     environment = os.environ.copy()
     asan_options = environment.get("ASAN_OPTIONS", ASAN_DEFAULT_OPTIONS)
-    if "log_path=" not in asan_options:
-        asan_options = f"{asan_options}:log_path={log_prefix}"
-    environment["ASAN_OPTIONS"] = asan_options
+    option_values = [
+        option for option in asan_options.split(":") if option and not option.startswith("log_path=")
+    ]
+    option_values.append(f"log_path={log_prefix}")
+    environment["ASAN_OPTIONS"] = ":".join(option_values)
     return environment
 
 
@@ -537,15 +542,15 @@ def analyze_compile_log(
             )
             return False, f"Matched compile error pattern: {pattern}"
 
-    link_pattern = rf"\[\s*LINK\]\s*->\s*ALL/{re.escape(target)}\b"
+    link_pattern = rf"\[\s*LINK\]\s*->\s*{re.escape(ASAN_BUILD_ARCH)}/{re.escape(target)}\b"
     if not re.search(link_pattern, log_text):
         logger.error(
             f"Compile log does not contain required link marker for {target}: {compile_log}"
         )
-        return False, f"Missing link marker: [    LINK]  -> ALL/{target}"
+        return False, f"Missing link marker: [    LINK]  -> {ASAN_BUILD_ARCH}/{target}"
 
     logger.warning(f"Compile log indicates PASS for {target}: {compile_log}")
-    return True, f"Found link marker: [    LINK]  -> ALL/{target}"
+    return True, f"Found link marker: [    LINK]  -> {ASAN_BUILD_ARCH}/{target}"
 
 
 def compile_gem5(
@@ -562,8 +567,8 @@ def compile_gem5(
     build_dir.mkdir(parents=True, exist_ok=True)
 
     target = "gem5.opt" if build_type == "opt" else "gem5.debug"
-    gem5_binary = build_dir / "ALL" / target
-    fallback_binary = repo_dir / f"build/ALL/{target}"
+    gem5_binary = build_dir / ASAN_BUILD_ARCH / target
+    fallback_binary = repo_dir / f"build/{ASAN_BUILD_ARCH}/{target}"
     if not gem5_binary.exists() and fallback_binary.exists():
         gem5_binary = fallback_binary
 
@@ -578,11 +583,9 @@ def compile_gem5(
     completed = run_command(
         [
             "scons",
-            f"build/ALL/{target}",
-            "-j20",
-            "--ignore-style",
-            "--install-hooks",
+            f"build/{ASAN_BUILD_ARCH}/{target}",
             ASAN_BUILD_FLAG,
+            ASAN_BUILD_JOBS,
         ],
         cwd=repo_dir,
         logger=logger,
@@ -594,7 +597,7 @@ def compile_gem5(
     if gem5_binary.exists():
         success = completed.returncode == 0
     else:
-        fallback_binary = repo_dir / f"build/ALL/{target}"
+        fallback_binary = repo_dir / f"build/{ASAN_BUILD_ARCH}/{target}"
         if fallback_binary.exists():
             gem5_binary = fallback_binary
             success = completed.returncode == 0
@@ -605,7 +608,7 @@ def compile_gem5(
     success = success and log_success
 
     if success and gem5_binary.exists():
-        output_binary = output_dir / "build" / "ALL" / target
+        output_binary = output_dir / "build" / ASAN_BUILD_ARCH / target
         output_binary.parent.mkdir(parents=True, exist_ok=True)
         if gem5_binary.resolve() != output_binary.resolve():
             shutil.copy2(gem5_binary, output_binary)
@@ -948,11 +951,9 @@ def build_compile_command(repo_dir: Path, build_type: str) -> List[str]:
     target = "gem5.opt" if build_type == "opt" else "gem5.debug"
     return [
         "scons",
-        f"build/ALL/{target}",
-        "-j20",
-        "--ignore-style",
-        "--install-hooks",
+        f"build/{ASAN_BUILD_ARCH}/{target}",
         ASAN_BUILD_FLAG,
+        ASAN_BUILD_JOBS,
     ]
 
 
@@ -974,7 +975,7 @@ def write_dry_run_summary(
         "build_type": build_type,
         "mode": "dry_run",
         "chip_configuration_keys": list(chip_config.keys()) if isinstance(chip_config, dict) else [],
-        "binary_path": str(output_dir / "build" / "ALL" / ("gem5.opt" if build_type == "opt" else "gem5.debug")),
+        "binary_path": str(output_dir / "build" / ASAN_BUILD_ARCH / ("gem5.opt" if build_type == "opt" else "gem5.debug")),
         "results_root": str(output_dir / "RESULTS"),
         "compile_command": planned_compile_command,
         "simulation_commands": planned_simulation_commands,
@@ -1135,7 +1136,7 @@ def main() -> int:
                         resolved_outdir = output_dir / "RESULTS" / "simulation" / chip_name / case_name
                     else:
                         resolved_outdir = Path(str(case_outdir))
-                    simulated_binary = output_dir / "build" / "ALL" / ("gem5.opt" if args.compile == "opt" else "gem5.debug")
+                    simulated_binary = output_dir / "build" / ASAN_BUILD_ARCH / ("gem5.opt" if args.compile == "opt" else "gem5.debug")
                     planned_simulation_commands.append(
                         {
                             "chip": chip_name,
@@ -1178,7 +1179,7 @@ def main() -> int:
         compile_log.parent.mkdir(parents=True, exist_ok=True)
         compile_reason = f"Compilation skipped by user for build type {args.compile}."
         compile_log.write_text(f"{compile_reason}\n", encoding="utf-8")
-        gem5_binary = output_dir / "build" / "ALL" / ("gem5.opt" if args.compile == "opt" else "gem5.debug")
+        gem5_binary = output_dir / "build" / ASAN_BUILD_ARCH / ("gem5.opt" if args.compile == "opt" else "gem5.debug")
         compile_success = None
         compile_runtime_seconds = 0.0
     else:
@@ -1347,7 +1348,7 @@ def main() -> int:
         args.compile,
         args.skip_compilation,
         compile_success if "compile_success" in locals() else None,
-        gem5_binary if "gem5_binary" in locals() else output_dir / "build" / "ALL" / ("gem5.opt" if args.compile == "opt" else "gem5.debug"),
+        gem5_binary if "gem5_binary" in locals() else output_dir / "build" / ASAN_BUILD_ARCH / ("gem5.opt" if args.compile == "opt" else "gem5.debug"),
         compile_log if "compile_log" in locals() else output_dir / "compilation" / f"compile_{args.compile}.log",
         compile_reason if "compile_reason" in locals() else None,
         chip_results,
