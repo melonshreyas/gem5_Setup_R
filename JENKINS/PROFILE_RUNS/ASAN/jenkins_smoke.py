@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Smoke test workflow for the gem5 setup repository.
+"""AddressSanitizer profile workflow for the gem5 setup repository.
 
 This script provides a simple, structured entry point for:
 - cloning a repository,
@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -26,16 +27,18 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from jenkins_smoke_html import (
-    generate_jenkins_history_smoke_results_html,
-    generate_jenkins_history_smoke_results_json,
-    generate_smoke_results_html,
-    generate_smoke_results_json,
+    generate_jenkins_history_asan_results_html,
+    generate_jenkins_history_asan_results_json,
+    generate_asan_results_html,
+    generate_asan_results_json,
 )
 from send_email_report import send_history_report_email
 
-DEFAULT_INPUT_DIR = Path("/Users/shreyas/Documents/JENKINS/SMOKE")
+DEFAULT_INPUT_DIR = Path("/Users/diya/Documents/gem5_Setup_R/JENKINS/PROFILE_RUNS/ASAN")
 DEFAULT_REPO_URL = "https://github.com/melonshreyas/gem5_Setup_R.git"
-DEFAULT_HISTORY_DIR = Path("/Users/shreyas/Documents/JENKINS/HISTORY/SMOKE")
+DEFAULT_HISTORY_DIR = DEFAULT_INPUT_DIR / "HISTORY"
+ASAN_BUILD_FLAG = "--with-asan"
+ASAN_DEFAULT_OPTIONS = "detect_leaks=1:halt_on_error=1:abort_on_error=1:symbolize=1"
 COMPILE_ERROR_PATTERNS = (
     r"\berror:\s+",
     r"\bfatal error:\s+",
@@ -127,7 +130,7 @@ def parse_args() -> argparse.Namespace:
     This makes the build, run, reporting, and email behavior configurable from the shell.
     """
     parser = argparse.ArgumentParser(
-        description="Run a gem5 smoke workflow with repository clone, compile, and simulation steps."
+        description="Run a gem5 AddressSanitizer profile workflow with compile and simulation steps."
     )
     parser.add_argument(
         "--input-dir",
@@ -137,28 +140,28 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-dir",
         default=None,
-        help="Directory used for compilation and simulation outputs. Defaults to a new SMOKE_BUILD_<NUM> folder under the input directory.",
+        help="Directory used for compilation and simulation outputs. Defaults to a new ASAN_BUILD_<NUM> folder under the input directory.",
     )
     parser.add_argument(
         "--branch",
-        default="main",
+        default="stable",
         help="Branch to check out after cloning. Default: %(default)s",
     )
     parser.add_argument(
         "--chip-configuration",
-        default=None,
+        default=str(DEFAULT_INPUT_DIR / "chip_configuration.json"),
         help="Path to a JSON file that contains chip or simulation configuration settings.",
     )
     parser.add_argument(
         "--compile",
         choices=["opt", "debug"],
         default="opt",
-        help="Which gem5 build target to compile. Default: %(default)s",
+        help="Which gem5 build target to compile with AddressSanitizer. Default: %(default)s",
     )
     parser.add_argument(
         "--chip-name",
         nargs="*",
-        default=None,
+        default=["ALL"],
         help="Optional chip names to process from the chip configuration JSON. If omitted or empty, all chip entries are processed. You can provide multiple names, for example: --chip-name CHIP_1 CHIP_2.",
     )
     parser.add_argument(
@@ -220,8 +223,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--email-subject",
-        default="gem5 Smoke Report",
-        help="Email subject for the sent report. Default: %(default)s",
+        default="gem5 ASAN Report",
+        help="Email subject for the sent ASAN report. Default: %(default)s",
     )
     parser.add_argument(
         "--lsf",
@@ -299,7 +302,7 @@ def build_lsf_submission_command(args: argparse.Namespace, output_dir: Path, log
     if args.recipient_email:
         for recipient in args.recipient_email:
             command.extend(["--recipient-email", recipient])
-    if args.email_subject != "gem5 Smoke Report":
+    if args.email_subject != "gem5 ASAN Report":
         command.extend(["--email-subject", args.email_subject])
     command.extend(["--lsf", "0"])
     return command
@@ -316,7 +319,7 @@ def resolve_output_dir(input_dir: Path, requested_output_dir: Optional[str]) -> 
     base_dir.mkdir(parents=True, exist_ok=True)
     index = 1
     while True:
-        candidate = base_dir / f"SMOKE_BUILD_{index}"
+        candidate = base_dir / f"ASAN_BUILD_{index}"
         if not candidate.exists():
             return candidate
         index += 1
@@ -354,6 +357,7 @@ def run_command(
     allow_failure: bool = False,
     log_file: Optional[Path] = None,
     input_text: Optional[str] = None,
+    environment: Optional[Dict[str, str]] = None,
 ) -> subprocess.CompletedProcess[str]:
     """Run a subprocess and capture its output.
     The command stream is logged to disk so failures are easier to inspect later.
@@ -377,8 +381,8 @@ def run_command(
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         bufsize=1,
+        env=environment,
     )
-
     if input_text is not None and process.stdin is not None:
         process.stdin.write(input_text)
         process.stdin.flush()
@@ -415,6 +419,16 @@ def run_command(
         )
 
     return completed
+
+
+def build_asan_environment(log_prefix: Path) -> Dict[str, str]:
+    """Build the runtime environment used by each ASAN simulation case."""
+    environment = os.environ.copy()
+    asan_options = environment.get("ASAN_OPTIONS", ASAN_DEFAULT_OPTIONS)
+    if "log_path=" not in asan_options:
+        asan_options = f"{asan_options}:log_path={log_prefix}"
+    environment["ASAN_OPTIONS"] = asan_options
+    return environment
 
 
 def git_clone(repo_url: str, destination_dir: Path, branch: str, logger: SmokeLogger) -> Dict[str, Any]:
@@ -553,16 +567,8 @@ def compile_gem5(
     if not gem5_binary.exists() and fallback_binary.exists():
         gem5_binary = fallback_binary
 
-    if should_skip_build(repo_dir, gem5_binary, logger):
-        compile_log = output_dir / "RESULTS" / "compilation" / f"compile_{build_type}.log"
-        compile_log.parent.mkdir(parents=True, exist_ok=True)
-        skip_reason = "Build skipped because the existing binary is up to date."
-        compile_log.write_text(f"{skip_reason}\n", encoding="utf-8")
-        logger.warning("Skipping compile step because the binary is already present and source files are unchanged.")
-        return gem5_binary, True, compile_log, 0.0, skip_reason
-
     logger.warning(f"Compiling gem5 ({build_type}) inside {repo_dir}")
-    compile_log = output_dir / "RESULTS" / "compilation" / f"compile_{build_type}.log"
+    compile_log = output_dir / "RESULTS" / "compilation" / f"compile_{build_type}_asan.log"
     compile_log.parent.mkdir(parents=True, exist_ok=True)
     compile_log.write_text(
         f"Build started for {build_type}\nWorking directory: {repo_dir}\n",
@@ -576,6 +582,7 @@ def compile_gem5(
             "-j20",
             "--ignore-style",
             "--install-hooks",
+            ASAN_BUILD_FLAG,
         ],
         cwd=repo_dir,
         logger=logger,
@@ -683,6 +690,8 @@ def write_general_summary(
             "simulation_status": entry.get("simulation_status"),
             "output_dir": entry.get("output_dir"),
             "simulation_log": entry.get("simulation_log"),
+            "asan_log_prefix": entry.get("asan_log_prefix"),
+            "asan_options": entry.get("asan_options"),
             "return_code": entry.get("return_code"),
             "script": entry.get("script"),
             "runtime_seconds": entry.get("runtime_seconds", 0.0),
@@ -943,6 +952,7 @@ def build_compile_command(repo_dir: Path, build_type: str) -> List[str]:
         "-j20",
         "--ignore-style",
         "--install-hooks",
+        ASAN_BUILD_FLAG,
     ]
 
 
@@ -1058,11 +1068,20 @@ def simulate_gem5(
     ]
 
     simulation_log = resolved_outdir / "simulation.log"
+    asan_log_prefix = resolved_outdir / "asan.log"
+    asan_environment = build_asan_environment(asan_log_prefix)
     logger.warning(
         f"Running simulation for {chip_name}/{case_name} with: {' '.join(command)}"
     )
     simulation_started = time.perf_counter()
-    completed = run_command(command, cwd=repo_dir, logger=logger, allow_failure=True, log_file=simulation_log)
+    completed = run_command(
+        command,
+        cwd=repo_dir,
+        logger=logger,
+        allow_failure=True,
+        log_file=simulation_log,
+        environment=asan_environment,
+    )
     simulation_runtime_seconds = round(time.perf_counter() - simulation_started, 3)
     stats_metrics = read_stats_metrics(resolved_outdir / "stats.txt")
     return {
@@ -1073,6 +1092,8 @@ def simulate_gem5(
         "command": command,
         "output_dir": str(resolved_outdir),
         "simulation_log": str(simulation_log),
+        "asan_log_prefix": str(asan_log_prefix),
+        "asan_options": asan_environment["ASAN_OPTIONS"],
         "script": str(script_path),
         "runtime_seconds": simulation_runtime_seconds,
         "stats_metrics": stats_metrics,
@@ -1304,6 +1325,8 @@ def main() -> int:
                         "simulation_status": simulation_result["status"],
                         "output_dir": simulation_result.get("output_dir"),
                         "simulation_log": simulation_result.get("simulation_log"),
+                        "asan_log_prefix": simulation_result.get("asan_log_prefix"),
+                        "asan_options": simulation_result.get("asan_options"),
                         "return_code": simulation_result.get("return_code"),
                         "script": simulation_result.get("script"),
                         "runtime_seconds": simulation_result.get("runtime_seconds", 0.0),
@@ -1346,14 +1369,14 @@ def main() -> int:
             logger.error("LSF submission failed.")
         return 0
 
-    logger.warning("Smoke workflow completed successfully.")
-    generate_smoke_results_html(output_dir, logger)
-    generate_smoke_results_json(output_dir, logger)
-    generate_jenkins_history_smoke_results_html(DEFAULT_HISTORY_DIR, logger, limit=30)
-    generate_jenkins_history_smoke_results_json(DEFAULT_HISTORY_DIR, logger, limit=30)
+    logger.warning("ASAN profile workflow completed successfully.")
+    generate_asan_results_html(output_dir, logger)
+    generate_asan_results_json(output_dir, logger)
+    generate_jenkins_history_asan_results_html(DEFAULT_HISTORY_DIR, logger, limit=30)
+    generate_jenkins_history_asan_results_json(DEFAULT_HISTORY_DIR, logger, limit=30)
 
     if args.send_email:
-        history_report_path = DEFAULT_HISTORY_DIR / "jenkins_history_smoke_results.html"
+        history_report_path = DEFAULT_HISTORY_DIR / "jenkins_history_asan_results.html"
         email_sent = send_history_report_email(
             html_report_path=history_report_path,
             to_addresses=args.recipient_email or ["shreyassbagi@gmail.com"],

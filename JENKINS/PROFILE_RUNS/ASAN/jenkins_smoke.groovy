@@ -1,4 +1,4 @@
-// Basic Jenkins pipeline for the gem5 smoke workflow.
+// Jenkins pipeline for the gem5 AddressSanitizer profile workflow.
 // This script can be loaded into a Jenkins Pipeline job and used to run the
 // workflow with configurable build, chip-selection, and reporting options.
 
@@ -9,7 +9,7 @@ pipeline {
         string(
             name: 'BRANCH',
             defaultValue: 'stable',
-            description: 'Git branch to check out before running the smoke workflow.'
+            description: 'Git branch to check out before running the ASAN workflow.'
         )
         string(
             name: 'INPUT_DIR',
@@ -19,12 +19,12 @@ pipeline {
         string(
             name: 'OUTPUT_DIR',
             defaultValue: '',
-            description: 'Optional output directory for the smoke run. Leave empty to let the script auto-create one.'
+            description: 'Optional output directory for the ASAN run. Leave empty to let the script auto-create one.'
         )
         string(
             name: 'CHIP_CONFIGURATION',
             defaultValue: '',
-            description: 'Absolute path to chip_configuration.json. Leave empty to use JENKINS/SMOKE/chip_configuration.json inside the workspace.'
+            description: 'Absolute path to chip_configuration.json. Leave empty to use the ASAN configuration inside the workspace.'
         )
         choice(
             name: 'COMPILE_TARGET',
@@ -41,7 +41,7 @@ pipeline {
         booleanParam(
             name: 'SKIP_COMPILATION',
             defaultValue: false,
-            description: 'Skip the compilation stage and reuse the existing build if possible.'
+            description: 'Skip the ASAN compilation stage.'
         )
         booleanParam(
             name: 'SKIP_SIMULATION',
@@ -65,12 +65,12 @@ pipeline {
         PATH = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${env.PATH}"
         PYTHON_BIN = 'python3'
         REPO_ROOT = "${env.WORKSPACE}"
-        SMOKE_REPO_URL = 'https://github.com/melonshreyas/gem5_Setup_R.git'
-        SMOKE_INPUT_DIR = "${env.WORKSPACE}"
-        SMOKE_OUTPUT_DIR = "/Users/shreyas/Documents/JENKINS/SMOKE/SMOKE_BUILD_${env.BUILD_NUMBER}"
-        SMOKE_HISTORY_DIR = '/Users/shreyas/Documents/JENKINS/HISTORY/SMOKE'
-        SMOKE_CONFIG = "${env.WORKSPACE}/JENKINS/SMOKE/chip_configuration.json"
-        SMOKE_SCRIPT = "${env.WORKSPACE}/JENKINS/SMOKE/jenkins_smoke.py"
+        ASAN_REPO_URL = 'https://github.com/melonshreyas/gem5_Setup_R.git'
+        ASAN_INPUT_DIR = "${env.WORKSPACE}"
+        ASAN_OUTPUT_DIR = "/Users/diya/Documents/gem5_Setup_R/JENKINS/PROFILE_RUNS/ASAN/ASAN_BUILD_${env.BUILD_NUMBER}"
+        ASAN_HISTORY_DIR = '/Users/diya/Documents/gem5_Setup_R/JENKINS/PROFILE_RUNS/ASAN/HISTORY'
+        ASAN_CONFIG = "${env.WORKSPACE}/JENKINS/PROFILE_RUNS/ASAN/chip_configuration.json"
+        ASAN_SCRIPT = "${env.WORKSPACE}/JENKINS/PROFILE_RUNS/ASAN/jenkins_smoke.py"
         BUILD_TAG_VALUE = "${env.BUILD_TAG}"
         BUILD_ID_VALUE = "${env.BUILD_ID}"
         JOB_NAME_VALUE = "${env.JOB_NAME}"
@@ -81,6 +81,7 @@ pipeline {
         SENDER_EMAIL = ''
         SENDER_PASSWORD = ''
         SMTP_RECIPIENTS = ''
+        ASAN_OPTIONS = 'detect_leaks=1:abort_on_error=1:halt_on_error=1'
     }
 
     options {
@@ -115,18 +116,18 @@ pipeline {
 
         stage('Prepare Environment') {
             steps {
-                echo '[Pipeline] Preparing Python environment and workspace folders.'
+                    echo '[Pipeline] Preparing Python environment and ASAN output folders.'
                 sh '''
                     set -e
                     echo "[Shell] Python executable: ${PYTHON_BIN}"
                     ${PYTHON_BIN} --version
-                    echo "[Shell] Creating output directory: $SMOKE_OUTPUT_DIR"
-                    mkdir -p "$SMOKE_OUTPUT_DIR"
+                    echo "[Shell] Creating output directory: $ASAN_OUTPUT_DIR"
+                    mkdir -p "$ASAN_OUTPUT_DIR"
                     if [ -d "$WORKSPACE/.git" ]; then
                         echo "[Shell] Workspace already contains a Git checkout."
                     else
-                        echo "[Shell] Cloning repository: $SMOKE_REPO_URL"
-                        git clone --recursive "$SMOKE_REPO_URL" "$WORKSPACE"
+                        echo "[Shell] Cloning repository: $ASAN_REPO_URL"
+                        git clone --recursive "$ASAN_REPO_URL" "$WORKSPACE"
                     fi
                     cd "$WORKSPACE"
                     echo "[Shell] Updating submodules."
@@ -145,7 +146,7 @@ pipeline {
                     // Read chip names from chip_configuration.json and update CHIP_NAME choices for the next build.
                     def chipConfigPath = params.CHIP_CONFIGURATION?.trim()
                         ? (params.CHIP_CONFIGURATION.startsWith('/') ? params.CHIP_CONFIGURATION : "${env.WORKSPACE}/${params.CHIP_CONFIGURATION}")
-                        : env.SMOKE_CONFIG
+                        : env.ASAN_CONFIG
 
                     def chipNamesRaw = sh(
                         script: "${env.PYTHON_BIN} -c \"import json; cfg=json.load(open('${chipConfigPath}')); print('\\n'.join(['ALL']+sorted(cfg.keys())))\"",
@@ -160,19 +161,19 @@ pipeline {
                     properties([
                         parameters([
                             string(name: 'BRANCH', defaultValue: params.BRANCH ?: 'stable',
-                                description: 'Git branch to check out before running the smoke workflow.'),
+                                description: 'Git branch to check out before running the ASAN workflow.'),
                             string(name: 'INPUT_DIR', defaultValue: '',
                                 description: 'Root directory of the gem5 repository checkout. Leave empty to use the Jenkins workspace.'),
                             string(name: 'OUTPUT_DIR', defaultValue: '',
-                                description: 'Optional output directory for the smoke run. Leave empty to let the script auto-create one.'),
+                                description: 'Optional output directory for the ASAN run. Leave empty to let the script auto-create one.'),
                             string(name: 'CHIP_CONFIGURATION', defaultValue: '',
-                                description: 'Absolute path to chip_configuration.json. Leave empty to use JENKINS/SMOKE/chip_configuration.json inside the workspace.'),
+                                description: 'Absolute path to chip_configuration.json. Leave empty to use the ASAN configuration inside the workspace.'),
                             choice(name: 'COMPILE_TARGET', choices: ['opt', 'debug'],
                                 description: 'gem5 build target to compile.'),
                             choice(name: 'CHIP_NAME', choices: chipList,
                                 description: 'Chip to run. Populated automatically from chip_configuration.json. Select ALL to run every chip.'),
                             booleanParam(name: 'SKIP_COMPILATION', defaultValue: false,
-                                description: 'Skip the compilation stage and reuse the existing build if possible.'),
+                                description: 'Skip the ASAN compilation stage.'),
                             booleanParam(name: 'SKIP_SIMULATION', defaultValue: false,
                                 description: 'Skip simulation but still generate the summary and report files.'),
                             booleanParam(name: 'DRY_RUN', defaultValue: false,
@@ -186,24 +187,24 @@ pipeline {
             }
         }
 
-        stage('Run Smoke Workflow') {
+        stage('Run ASAN Workflow') {
             steps {
                 script {
-                    echo '[Pipeline] Preparing smoke workflow arguments.'
+                    echo '[Pipeline] Preparing ASAN workflow arguments.'
                     def cliArgs = []
-                    def inputDir = params.INPUT_DIR?.trim() ? params.INPUT_DIR : env.SMOKE_INPUT_DIR
+                    def inputDir = params.INPUT_DIR?.trim() ? params.INPUT_DIR : env.ASAN_INPUT_DIR
                     // Always resolve chip config to an absolute path.
                     def chipConfigRaw = params.CHIP_CONFIGURATION?.trim() ?: ''
                     def chipConfig = chipConfigRaw
                         ? (chipConfigRaw.startsWith('/') ? chipConfigRaw : "${env.WORKSPACE}/${chipConfigRaw}")
-                        : env.SMOKE_CONFIG
-                    def outputDir = params.OUTPUT_DIR?.trim() ? params.OUTPUT_DIR : env.SMOKE_OUTPUT_DIR
-                    def smokeScript = env.SMOKE_SCRIPT ?: "${env.WORKSPACE}/JENKINS/SMOKE/jenkins_smoke.py"
+                        : env.ASAN_CONFIG
+                    def outputDir = params.OUTPUT_DIR?.trim() ? params.OUTPUT_DIR : env.ASAN_OUTPUT_DIR
+                    def smokeScript = env.ASAN_SCRIPT ?: "${env.WORKSPACE}/JENKINS/PROFILE_RUNS/ASAN/jenkins_smoke.py"
 
                     echo "[Pipeline] Input directory: ${inputDir}"
                     echo "[Pipeline] Chip configuration: ${chipConfig}"
                     echo "[Pipeline] Output directory: ${outputDir}"
-                    echo "[Pipeline] Smoke script: ${smokeScript}"
+                    echo "[Pipeline] ASAN script: ${smokeScript}"
                     echo "[Pipeline] Compile target: ${params.COMPILE_TARGET}"
                     echo "[Pipeline] Chip name: ${params.CHIP_NAME ?: 'ALL'}"
                     echo "[Pipeline] Skip compilation: ${params.SKIP_COMPILATION}"
@@ -271,9 +272,9 @@ pipeline {
                         cmd += " '${arg.replace("'", "'\\''")}'"
                     }
 
-                    echo "[Pipeline] Running smoke workflow with command: ${cmd}"
+                    echo "[Pipeline] Running ASAN workflow with command: ${cmd}"
                     sh cmd
-                    echo '[Pipeline] Smoke workflow command completed.'
+                    echo '[Pipeline] ASAN workflow command completed.'
                 }
             }
         }
@@ -281,9 +282,9 @@ pipeline {
 
     post {
         always {
-            echo 'Publishing smoke workflow artifacts and reports.'
+            echo 'Publishing ASAN workflow artifacts and reports.'
             archiveArtifacts(
-                artifacts: '/Users/shreyas/Documents/JENKINS/SMOKE/**/*.html, /Users/shreyas/Documents/JENKINS/SMOKE/**/*.json, /Users/shreyas/Documents/JENKINS/HISTORY/**/*.html, /Users/shreyas/Documents/JENKINS/HISTORY/**/*.json',
+                artifacts: '/Users/diya/Documents/gem5_Setup_R/JENKINS/PROFILE_RUNS/ASAN/**/*.html, /Users/diya/Documents/gem5_Setup_R/JENKINS/PROFILE_RUNS/ASAN/**/*.json',
                 allowEmptyArchive: true
             )
 
@@ -292,14 +293,14 @@ pipeline {
                 alwaysLinkToLastBuild: true,
                 keepAll: true,
                 includes: '**/*',
-                reportDir: '/Users/shreyas/Documents/JENKINS/HISTORY/SMOKE',
-                reportFiles: 'jenkins_history_smoke_results.html',
-                reportName: 'Smoke History Report'
+                reportDir: '/Users/diya/Documents/gem5_Setup_R/JENKINS/PROFILE_RUNS/ASAN/HISTORY',
+                reportFiles: 'jenkins_history_asan_results.html',
+                reportName: 'ASAN History Report'
             ])
         }
 
         failure {
-            echo 'The smoke workflow failed. Inspect the archived logs and reports for details.'
+            echo 'The ASAN workflow failed. Inspect the archived logs and reports for details.'
         }
     }
 }

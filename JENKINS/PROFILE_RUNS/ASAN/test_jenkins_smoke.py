@@ -4,10 +4,19 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent))
 
-from jenkins_smoke import build_simulation_command, expand_simulation_cases
+from jenkins_smoke import build_asan_environment, build_simulation_command, expand_simulation_cases
 
 
 class ExpandSimulationCasesTest(unittest.TestCase):
+    def test_builds_fail_fast_asan_environment_with_log_prefix(self) -> None:
+        environment = build_asan_environment(Path("/tmp/asan.log"))
+
+        self.assertIn("detect_leaks=1", environment["ASAN_OPTIONS"])
+        self.assertIn("halt_on_error=1", environment["ASAN_OPTIONS"])
+        self.assertIn("abort_on_error=1", environment["ASAN_OPTIONS"])
+        self.assertIn("symbolize=1", environment["ASAN_OPTIONS"])
+        self.assertIn("log_path=/tmp/asan.log", environment["ASAN_OPTIONS"])
+
     def test_build_simulation_command_includes_outdir_and_case_name(self) -> None:
         """Verify that the built command includes the output directory and case name.
         This ensures the generated gem5 invocation targets the expected run folder.
@@ -24,7 +33,10 @@ class ExpandSimulationCasesTest(unittest.TestCase):
 
         self.assertIn(str(gem5_binary), command)
         self.assertTrue(any(str(token).startswith("--outdir=") for token in command))
-        self.assertIn("/tmp/repo/RESULTS/simulation/CHIP_1/o3/CHIP_1_o3", command)
+        self.assertIn(
+            "--outdir=/tmp/repo/RESULTS/simulation/CHIP_1/o3/CHIP_1_o3",
+            command,
+        )
 
     def test_expands_named_cases_from_chip_config(self) -> None:
         """Verify that named test cases are expanded into separate runnable cases.

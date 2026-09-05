@@ -96,7 +96,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "report_path",
         nargs="?",
-        default="jenkins_history_smoke_results.html",
+        default="jenkins_history_asan_results.html",
         help="Path to the HTML report to send. Default: %(default)s",
     )
     parser.add_argument("--smtp-server", default=None, help="SMTP server hostname.")

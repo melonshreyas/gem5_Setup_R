@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""HTML reporting helpers for the gem5 smoke workflow."""
+"""HTML reporting helpers for the gem5 ASAN profile workflow."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 # External CSS filename written alongside every HTML report to bypass Jenkins CSP.
-_REPORT_CSS_FILENAME = "smoke_report.css"
+_REPORT_CSS_FILENAME = "asan_report.css"
 _REPORT_CSS = """:root {
   color-scheme: light;
   --bg: #f6f8fb;
@@ -99,11 +99,11 @@ td.group-cell { background: #f2f6fb; font-weight: 700; }
 
 
 __all__ = [
-    "generate_jenkins_history_smoke_results_html",
-    "generate_jenkins_history_smoke_results_json",
-    "generate_smoke_results_html",
-    "generate_smoke_results_json",
-    "render_smoke_results_html",
+    "generate_jenkins_history_asan_results_html",
+    "generate_jenkins_history_asan_results_json",
+    "generate_asan_results_html",
+    "generate_asan_results_json",
+    "render_asan_results_html",
 ]
 
 
@@ -228,7 +228,7 @@ def _collect_report_rows(summary: Dict[str, Any], build_number: str) -> List[Dic
     return rows
 
 
-def render_smoke_results_html(page_title: str, summary_fields: Dict[str, Any], rows: List[Dict[str, Any]]) -> str:
+def render_asan_results_html(page_title: str, summary_fields: Dict[str, Any], rows: List[Dict[str, Any]]) -> str:
   """Render the smoke report HTML page.
   It creates the summary details panel and the grouped table used for the report.
   """
@@ -314,7 +314,7 @@ def render_smoke_results_html(page_title: str, summary_fields: Dict[str, Any], r
   if not table_rows:
     table_rows.append("<tr><td colspan='11'>No rows available.</td></tr>")
 
-  style = "  <link rel=\"stylesheet\" href=\"smoke_report.css\">"
+  style = f"  <link rel=\"stylesheet\" href=\"{_REPORT_CSS_FILENAME}\">"
 
   subtitle = "Grouped by CHIP_NAME with CASE_NAME rows underneath, and SIMULATION_RUN_TIME split into simSeconds and hostSeconds."
 
@@ -385,9 +385,9 @@ def _build_report_payload(page_title: str, summary_fields: Dict[str, Any], rows:
   }
 
 
-def generate_smoke_results_json(output_dir: Path, logger: Any) -> None:
+def generate_asan_results_json(output_dir: Path, logger: Any) -> None:
   """Generate the JSON smoke report for the latest run directory.
-  It writes the structured run summary and per-case rows to RESULTS/smoke_results.json.
+  It writes the structured run summary and per-case rows to RESULTS/asan_results.json.
   """
   summary_path = output_dir / "RESULTS" / "general_results.json"
   if not summary_path.exists():
@@ -406,15 +406,15 @@ def generate_smoke_results_json(output_dir: Path, logger: Any) -> None:
     "User Name": git_details.get("pushed_by", "N/A"),
     "Git Files Change": ", ".join(git_details.get("changed_files", [])) if isinstance(git_details.get("changed_files", []), list) and git_details.get("changed_files", []) else "N/A",
   }
-  report_path = output_dir / "RESULTS" / "smoke_results.json"
+  report_path = output_dir / "RESULTS" / "asan_results.json"
   report_path.write_text(
-    json.dumps(_build_report_payload("Smoke Results", summary_fields, rows), indent=2),
+    json.dumps(_build_report_payload("ASAN Results", summary_fields, rows), indent=2),
     encoding="utf-8",
   )
-  logger.warning(f"Wrote smoke JSON report: {report_path}")
+  logger.warning(f"Wrote ASAN JSON report: {report_path}")
 
 
-def generate_smoke_results_html(output_dir: Path, logger: Any) -> None:
+def generate_asan_results_html(output_dir: Path, logger: Any) -> None:
     """Generate the HTML smoke report for the latest run directory.
     It reads the general summary and writes a readable report page to disk.
     """
@@ -439,16 +439,16 @@ def generate_smoke_results_html(output_dir: Path, logger: Any) -> None:
         "Binary Path": summary.get("compilation", {}).get("binary_path", "N/A") if isinstance(summary.get("compilation", {}), dict) else "N/A",
         "Compile Log": summary.get("compilation", {}).get("log_file", "N/A") if isinstance(summary.get("compilation", {}), dict) else "N/A",
     }
-    html_text = render_smoke_results_html("Smoke Results", summary_fields, rows)
-    report_path = output_dir / "RESULTS" / "smoke_results.html"
+    html_text = render_asan_results_html("ASAN Results", summary_fields, rows)
+    report_path = output_dir / "RESULTS" / "asan_results.html"
     (output_dir / "RESULTS" / _REPORT_CSS_FILENAME).write_text(_REPORT_CSS, encoding="utf-8")
     report_path.write_text(html_text, encoding="utf-8")
-    logger.warning(f"Wrote smoke HTML report: {report_path}")
+    logger.warning(f"Wrote ASAN HTML report: {report_path}")
 
 
-def generate_jenkins_history_smoke_results_html(history_dir: Path, logger: Any, limit: int = 30) -> None:
+def generate_jenkins_history_asan_results_html(history_dir: Path, logger: Any, limit: int = 30) -> None:
     """Generate the HTML history report from recent smoke runs.
-    It writes the latest build snapshots into jenkins_history_smoke_results.html.
+    It writes the latest build snapshots into jenkins_history_asan_results.html.
     """
     history_path = history_dir / "history_results.json"
     if not history_path.exists():
@@ -509,14 +509,14 @@ def generate_jenkins_history_smoke_results_html(history_dir: Path, logger: Any, 
         "Rows Included": len(selected_rows),
     }
 
-    html_text = render_smoke_results_html("Jenkins History Smoke Results", summary_fields, selected_rows)
-    report_path = history_dir / "jenkins_history_smoke_results.html"
+    html_text = render_asan_results_html("Jenkins History ASAN Results", summary_fields, selected_rows)
+    report_path = history_dir / "jenkins_history_asan_results.html"
     (history_dir / _REPORT_CSS_FILENAME).write_text(_REPORT_CSS, encoding="utf-8")
     report_path.write_text(html_text, encoding="utf-8")
     logger.warning(f"Wrote Jenkins history HTML report: {report_path}")
 
 
-def generate_jenkins_history_smoke_results_json(history_dir: Path, logger: Any, limit: int = 30) -> None:
+def generate_jenkins_history_asan_results_json(history_dir: Path, logger: Any, limit: int = 30) -> None:
     """Generate the JSON history report from recent smoke runs.
     It exports the latest history rows in a machine-readable format.
     """
@@ -579,9 +579,9 @@ def generate_jenkins_history_smoke_results_json(history_dir: Path, logger: Any, 
         "Rows Included": len(selected_rows),
     }
 
-    report_path = history_dir / "jenkins_history_smoke_results.json"
+    report_path = history_dir / "jenkins_history_asan_results.json"
     report_path.write_text(
-        json.dumps(_build_report_payload("Jenkins History Smoke Results", summary_fields, selected_rows), indent=2),
+        json.dumps(_build_report_payload("Jenkins History ASAN Results", summary_fields, selected_rows), indent=2),
         encoding="utf-8",
     )
     logger.warning(f"Wrote Jenkins history JSON report: {report_path}")
