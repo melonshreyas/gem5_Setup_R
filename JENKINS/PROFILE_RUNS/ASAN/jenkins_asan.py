@@ -451,10 +451,11 @@ def git_clone(repo_url: str, destination_dir: Path, branch: str, logger: SmokeLo
         logger.warning(f"Repository already exists at {repo_dir}; git clone is done, reusing existing checkout")
         run_command(["git", "fetch", "--all", "--prune"], cwd=repo_dir, logger=logger, allow_failure=True)
 
-    run_command(["git", "submodule", "update", "--init", "--recursive"], cwd=repo_dir, logger=logger, allow_failure=True)
-
     if branch:
         run_command(["git", "checkout", branch], cwd=repo_dir, logger=logger, allow_failure=True)
+        run_command(["git", "pull", "--ff-only", "origin", branch], cwd=repo_dir, logger=logger)
+
+    run_command(["git", "submodule", "update", "--init", "--recursive"], cwd=repo_dir, logger=logger, allow_failure=True)
 
     metadata: Dict[str, Any] = {}
     metadata["commit_id"] = run_command(["git", "rev-parse", "HEAD"], cwd=repo_dir, logger=logger).stdout.strip()
