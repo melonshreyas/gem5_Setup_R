@@ -43,6 +43,20 @@ python3 JENKINS/PROFILE_RUNS/PERF/jenkins_perf.py \
 
 Useful options include `--compile debug`, `--chip-name ALL`, `--skip-compilation`, `--skip_simulation`, `--verbose`, `--lsf 1`, and `--send-email`.
 
+## Platform requirement for `perf`
+
+The Linux `perf` hardware-sampling workflow is supported only on a Linux
+machine with the `perf` utility installed and accessible in `PATH`. This
+includes `--perf-record`, `perf record`, and `perf report`; these commands are
+not supported natively on macOS or Windows. Use a Linux host, Linux VM, WSL2,
+or a remote Linux machine for hardware call-stack profiling.
+
+The regular PERF workflow remains available on macOS and Windows for compiling
+gem5, running simulations, and collecting gem5 statistics. Leave
+`--perf-record` disabled on those platforms. The runner checks for Linux
+`perf` before starting and reports an actionable error instead of invoking an
+unrelated executable.
+
 Enable Linux `perf` call-stack recording explicitly with:
 
 ```bash
