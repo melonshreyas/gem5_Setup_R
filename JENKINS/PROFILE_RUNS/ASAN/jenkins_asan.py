@@ -41,6 +41,7 @@ DEFAULT_CHIP_CONFIGURATION = Path(__file__).resolve().parent / "chip_configurati
 ASAN_BUILD_FLAG = "--sanitize=address"
 ASAN_BUILD_ARCH = "ALL"
 ASAN_BUILD_JOBS = "-j16"
+ASAN_BUILD_OPTIONS = ["--ignore-style", "--install-hooks"]
 ASAN_DEFAULT_OPTIONS = "detect_leaks=1:halt_on_error=1:abort_on_error=1:symbolize=1"
 COMPILE_ERROR_PATTERNS = (
     r"\berror:\s+",
@@ -586,6 +587,7 @@ def compile_gem5(
             f"build/{ASAN_BUILD_ARCH}/{target}",
             ASAN_BUILD_FLAG,
             ASAN_BUILD_JOBS,
+            *ASAN_BUILD_OPTIONS,
         ],
         cwd=repo_dir,
         logger=logger,
@@ -954,6 +956,7 @@ def build_compile_command(repo_dir: Path, build_type: str) -> List[str]:
         f"build/{ASAN_BUILD_ARCH}/{target}",
         ASAN_BUILD_FLAG,
         ASAN_BUILD_JOBS,
+        *ASAN_BUILD_OPTIONS,
     ]
 
 

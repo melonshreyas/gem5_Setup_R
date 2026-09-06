@@ -24,7 +24,7 @@ python3 JENKINS/PROFILE_RUNS/ASAN/jenkins_asan.py \
   --chip-name ALL
 ```
 
-The compiler command is `scons build/ALL/gem5.opt --sanitize=address -j16` for an opt build, or `scons build/ALL/gem5.debug --sanitize=address` for a debug build. ASAN builds are always recompiled so an ordinary cached gem5 binary cannot be mistaken for an instrumented binary.
+The compiler command is `scons build/ALL/gem5.opt --sanitize=address -j16 --ignore-style --install-hooks` for an opt build, or `scons build/ALL/gem5.debug --sanitize=address --ignore-style --install-hooks` for a debug build. ASAN builds are always recompiled so an ordinary cached gem5 binary cannot be mistaken for an instrumented binary.
 
 Preview the commands without compiling or simulating:
 

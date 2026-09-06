@@ -1,8 +1,8 @@
 {
   "CHIP_1": {
     "compile": {
-      "opt": "scons build/ALL/gem5.opt --sanitize=address -j16",
-      "debug": "scons build/ALL/gem5.debug --sanitize=address"
+      "opt": "scons build/ALL/gem5.opt --sanitize=address -j16 --ignore-style --install-hooks",
+      "debug": "scons build/ALL/gem5.debug --sanitize=address --ignore-style --install-hooks"
     },
     "simulate": {
       "description": "Category-based chip smoke simulations",
@@ -53,8 +53,8 @@
   "CHIP_2": {
     "comment": "Build commands for this chip can be modified and customized to use a chip-specific target instead of the generic ALL target, as needed for that chip.",
     "compile": {
-      "opt": "scons build/ALL/gem5.opt --sanitize=address -j16",
-      "debug": "scons build/ALL/gem5.debug --sanitize=address"
+      "opt": "scons build/ALL/gem5.opt --sanitize=address -j16 --ignore-style --install-hooks",
+      "debug": "scons build/ALL/gem5.debug --sanitize=address --ignore-style --install-hooks"
     },
     "simulate": {
       "description": "Category-based chip smoke simulations",
@@ -105,8 +105,8 @@
   "CHIP_3": {
     "comment": "Build commands for this chip can be modified and customized to use a chip-specific target instead of the generic ALL target, as needed for that chip.",
     "compile": {
-      "opt": "scons build/ALL/gem5.opt --sanitize=address -j16",
-      "debug": "scons build/ALL/gem5.debug --sanitize=address"
+      "opt": "scons build/ALL/gem5.opt --sanitize=address -j16 --ignore-style --install-hooks",
+      "debug": "scons build/ALL/gem5.debug --sanitize=address --ignore-style --install-hooks"
     },
     "simulate": {
       "description": "Category-based chip smoke simulations",
