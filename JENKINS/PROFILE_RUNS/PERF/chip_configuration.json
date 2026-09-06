@@ -5,44 +5,44 @@
       "debug": "scons build/ALL/gem5.debug -j 9"
     },
     "simulate": {
-      "description": "Category-based chip smoke simulations",
+      "description": "Category-based chip PERF simulations",
       "tests": {
-        "smoke_test_cores_materials": {
+        "perf_test_cores_materials": {
           "description": "Materials 04-cores example",
           "category": "materials_cores",
-          "outdir": "smoke_test_cores_materials",
+          "outdir": "perf_test_cores_materials",
           "sim_script_args": [
-            "--outdir=smoke_test_cores_materials",
+            "--outdir=perf_test_cores_materials",
             "--workload=WORKLOAD/RISCV/matrix-multiply"
           ],
           "sim_script": "materials/02-Using-gem5/04-cores/cores.py"
         },
-        "smoke_test_cache_materials": {
+        "perf_test_cache_materials": {
           "description": "Materials 05-cache-hierarchies example",
           "category": "materials_cache",
-          "outdir": "smoke_test_cache_materials",
+          "outdir": "perf_test_cache_materials",
           "sim_script_args": [
-            "--outdir=smoke_test_cache_materials",
+            "--outdir=perf_test_cache_materials",
             "--workload=WORKLOAD/X86/kernel"
           ],
           "sim_script": "materials/02-Using-gem5/05-cache-hierarchies/test-cache.py"
         },
-        "smoke_test_memory_materials": {
+        "perf_test_memory_materials": {
           "description": "Materials 06-memory example",
           "category": "materials_memory",
-          "outdir": "smoke_test_memory_materials",
+          "outdir": "perf_test_memory_materials",
           "sim_script_args": [
-            "--outdir=smoke_test_memory_materials",
+            "--outdir=perf_test_memory_materials",
             "--workload=WORKLOAD/ARM/addition"
           ],
           "sim_script": "materials/02-Using-gem5/06-memory/run-mem.py"
         },
-        "smoke_test_full_system_materials": {
+        "perf_test_full_system_materials": {
           "description": "Materials 07-full-system example",
           "category": "materials_full_system",
-          "outdir": "smoke_test_full_system_materials",
+          "outdir": "perf_test_full_system_materials",
           "sim_script_args": [
-            "--outdir=smoke_test_full_system_materials",
+            "--outdir=perf_test_full_system_materials",
             "--workload=WORKLOAD/X86/os"
           ],
           "sim_script": "materials/02-Using-gem5/07-full-system/x86-fs-kvm-run.py"
@@ -57,44 +57,44 @@
       "debug": "scons build/ALL/gem5.debug -j 9"
     },
     "simulate": {
-      "description": "Category-based chip smoke simulations",
+      "description": "Category-based chip PERF simulations",
       "tests": {
-        "smoke_test_cores_materials": {
+        "perf_test_cores_materials": {
           "description": "Materials 04-cores example",
           "category": "materials_cores",
-          "outdir": "smoke_test_cores_materials",
+          "outdir": "perf_test_cores_materials",
           "sim_script_args": [
-            "--outdir=smoke_test_cores_materials",
+            "--outdir=perf_test_cores_materials",
             "--workload=WORKLOAD/RISCV/matrix-multiply"
           ],
           "sim_script": "materials/02-Using-gem5/04-cores/cores.py"
         },
-        "smoke_test_cache_materials": {
+        "perf_test_cache_materials": {
           "description": "Materials 05-cache-hierarchies example",
           "category": "materials_cache",
-          "outdir": "smoke_test_cache_materials",
+          "outdir": "perf_test_cache_materials",
           "sim_script_args": [
-            "--outdir=smoke_test_cache_materials",
+            "--outdir=perf_test_cache_materials",
             "--workload=WORKLOAD/X86/kernel"
           ],
           "sim_script": "materials/02-Using-gem5/05-cache-hierarchies/test-cache.py"
         },
-        "smoke_test_memory_materials": {
+        "perf_test_memory_materials": {
           "description": "Materials 06-memory example",
           "category": "materials_memory",
-          "outdir": "smoke_test_memory_materials",
+          "outdir": "perf_test_memory_materials",
           "sim_script_args": [
-            "--outdir=smoke_test_memory_materials",
+            "--outdir=perf_test_memory_materials",
             "--workload=WORKLOAD/ARM/addition"
           ],
           "sim_script": "materials/02-Using-gem5/06-memory/run-mem.py"
         },
-        "smoke_test_full_system_materials": {
+        "perf_test_full_system_materials": {
           "description": "Materials 07-full-system example",
           "category": "materials_full_system",
-          "outdir": "smoke_test_full_system_materials",
+          "outdir": "perf_test_full_system_materials",
           "sim_script_args": [
-            "--outdir=smoke_test_full_system_materials",
+            "--outdir=perf_test_full_system_materials",
             "--workload=WORKLOAD/X86/os"
           ],
           "sim_script": "materials/02-Using-gem5/07-full-system/x86-fs-kvm-run.py"
@@ -109,44 +109,44 @@
       "debug": "scons build/ALL/gem5.debug -j 9"
     },
     "simulate": {
-      "description": "Category-based chip smoke simulations",
+      "description": "Category-based chip PERF simulations",
       "tests": {
-        "smoke_test_cores_materials": {
+        "perf_test_cores_materials": {
           "description": "Materials 04-cores example",
           "category": "materials_cores",
-          "outdir": "smoke_test_cores_materials",
+          "outdir": "perf_test_cores_materials",
           "sim_script_args": [
-            "--outdir=smoke_test_cores_materials",
+            "--outdir=perf_test_cores_materials",
             "--workload=WORKLOAD/RISCV/matrix-multiply"
           ],
           "sim_script": "materials/02-Using-gem5/04-cores/cores.py"
         },
-        "smoke_test_cache_materials": {
+        "perf_test_cache_materials": {
           "description": "Materials 05-cache-hierarchies example",
           "category": "materials_cache",
-          "outdir": "smoke_test_cache_materials",
+          "outdir": "perf_test_cache_materials",
           "sim_script_args": [
-            "--outdir=smoke_test_cache_materials",
+            "--outdir=perf_test_cache_materials",
             "--workload=WORKLOAD/X86/kernel"
           ],
           "sim_script": "materials/02-Using-gem5/05-cache-hierarchies/test-cache.py"
         },
-        "smoke_test_memory_materials": {
+        "perf_test_memory_materials": {
           "description": "Materials 06-memory example",
           "category": "materials_memory",
-          "outdir": "smoke_test_memory_materials",
+          "outdir": "perf_test_memory_materials",
           "sim_script_args": [
-            "--outdir=smoke_test_memory_materials",
+            "--outdir=perf_test_memory_materials",
             "--workload=WORKLOAD/ARM/addition"
           ],
           "sim_script": "materials/02-Using-gem5/06-memory/run-mem.py"
         },
-        "smoke_test_full_system_materials": {
+        "perf_test_full_system_materials": {
           "description": "Materials 07-full-system example",
           "category": "materials_full_system",
-          "outdir": "smoke_test_full_system_materials",
+          "outdir": "perf_test_full_system_materials",
           "sim_script_args": [
-            "--outdir=smoke_test_full_system_materials",
+            "--outdir=perf_test_full_system_materials",
             "--workload=WORKLOAD/X86/os"
           ],
           "sim_script": "materials/02-Using-gem5/07-full-system/x86-fs-kvm-run.py"

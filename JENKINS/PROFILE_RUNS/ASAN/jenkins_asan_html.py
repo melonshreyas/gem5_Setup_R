@@ -156,7 +156,7 @@ def _group_report_rows(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 
 def _collect_report_rows(summary: Dict[str, Any], build_number: str) -> List[Dict[str, Any]]:
-    """Flatten a smoke summary into per-chip and per-case report rows.
+    """Flatten an ASAN summary into per-chip and per-case report rows.
     These rows are consumed by the HTML renderer to produce the final table.
     """
     git_details = summary.get("git_details", {}) if isinstance(summary, dict) else {}
@@ -229,7 +229,7 @@ def _collect_report_rows(summary: Dict[str, Any], build_number: str) -> List[Dic
 
 
 def render_asan_results_html(page_title: str, summary_fields: Dict[str, Any], rows: List[Dict[str, Any]]) -> str:
-  """Render the smoke report HTML page.
+  """Render the ASAN report HTML page.
   It creates the summary details panel and the grouped table used for the report.
   """
 
@@ -386,7 +386,7 @@ def _build_report_payload(page_title: str, summary_fields: Dict[str, Any], rows:
 
 
 def generate_asan_results_json(output_dir: Path, logger: Any) -> None:
-  """Generate the JSON smoke report for the latest run directory.
+  """Generate the JSON ASAN report for the latest run directory.
   It writes the structured run summary and per-case rows to RESULTS/asan_results.json.
   """
   summary_path = output_dir / "RESULTS" / "general_results.json"
@@ -415,7 +415,7 @@ def generate_asan_results_json(output_dir: Path, logger: Any) -> None:
 
 
 def generate_asan_results_html(output_dir: Path, logger: Any) -> None:
-    """Generate the HTML smoke report for the latest run directory.
+    """Generate the HTML ASAN report for the latest run directory.
     It reads the general summary and writes a readable report page to disk.
     """
     summary_path = output_dir / "RESULTS" / "general_results.json"
@@ -447,7 +447,7 @@ def generate_asan_results_html(output_dir: Path, logger: Any) -> None:
 
 
 def generate_jenkins_history_asan_results_html(history_dir: Path, logger: Any, limit: int = 30) -> None:
-    """Generate the HTML history report from recent smoke runs.
+    """Generate the HTML history report from recent ASAN runs.
     It writes the latest build snapshots into jenkins_history_asan_results.html.
     """
     history_path = history_dir / "history_results.json"
@@ -517,7 +517,7 @@ def generate_jenkins_history_asan_results_html(history_dir: Path, logger: Any, l
 
 
 def generate_jenkins_history_asan_results_json(history_dir: Path, logger: Any, limit: int = 30) -> None:
-    """Generate the JSON history report from recent smoke runs.
+    """Generate the JSON history report from recent ASAN runs.
     It exports the latest history rows in a machine-readable format.
     """
     history_path = history_dir / "history_results.json"

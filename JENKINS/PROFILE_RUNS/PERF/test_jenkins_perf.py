@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent))
 
-from jenkins_smoke import build_simulation_command, expand_simulation_cases
+from jenkins_perf import build_simulation_command, expand_simulation_cases
 
 
 class ExpandSimulationCasesTest(unittest.TestCase):
@@ -24,11 +24,14 @@ class ExpandSimulationCasesTest(unittest.TestCase):
 
         self.assertIn(str(gem5_binary), command)
         self.assertTrue(any(str(token).startswith("--outdir=") for token in command))
-        self.assertIn("/tmp/repo/RESULTS/simulation/CHIP_1/o3/CHIP_1_o3", command)
+        self.assertIn(
+            "--outdir=/tmp/repo/RESULTS/simulation/CHIP_1/o3/CHIP_1_o3",
+            command,
+        )
 
     def test_expands_named_cases_from_chip_config(self) -> None:
         """Verify that named test cases are expanded into separate runnable cases.
-        This checks the config parsing path used by the smoke workflow.
+        This checks the config parsing path used by the PERF workflow.
         """
         chip_config = {
             "simulate": {

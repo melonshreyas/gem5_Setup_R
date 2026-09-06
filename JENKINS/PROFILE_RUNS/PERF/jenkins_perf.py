@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Smoke test workflow for the gem5 setup repository.
+"""Performance profile workflow for the gem5 setup repository.
 
 This script provides a simple, structured entry point for:
 - cloning a repository,
@@ -25,17 +25,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from jenkins_smoke_html import (
-    generate_jenkins_history_smoke_results_html,
-    generate_jenkins_history_smoke_results_json,
-    generate_smoke_results_html,
-    generate_smoke_results_json,
+from jenkins_perf_html import (
+    generate_jenkins_history_perf_results_html,
+    generate_jenkins_history_perf_results_json,
+    generate_perf_results_html,
+    generate_perf_results_json,
 )
 from send_email_report import send_history_report_email
 
-DEFAULT_INPUT_DIR = Path("/Users/shreyas/Documents/JENKINS/SMOKE")
+DEFAULT_INPUT_DIR = Path("/Users/diya/Documents/JENKINS/PROFILE_RUNS/PERF_RUN/PERF")
 DEFAULT_REPO_URL = "https://github.com/melonshreyas/gem5_Setup_R.git"
-DEFAULT_HISTORY_DIR = Path("/Users/shreyas/Documents/JENKINS/HISTORY/SMOKE")
+DEFAULT_HISTORY_DIR = Path("/Users/diya/Documents/JENKINS/HISTORY/PROFILE_RUNS/PROFILE/PERF")
+DEFAULT_PERF_FREQUENCY = 999
 COMPILE_ERROR_PATTERNS = (
     r"\berror:\s+",
     r"\bfatal error:\s+",
@@ -137,11 +138,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-dir",
         default=None,
-        help="Directory used for compilation and simulation outputs. Defaults to a new SMOKE_BUILD_<NUM> folder under the input directory.",
+        help="Directory used for compilation and simulation outputs. Defaults to a new PERF_BUILD_<NUM> folder under the input directory.",
     )
     parser.add_argument(
         "--branch",
-        default="main",
+        default="stable",
         help="Branch to check out after cloning. Default: %(default)s",
     )
     parser.add_argument(
@@ -187,6 +188,23 @@ def parse_args() -> argparse.Namespace:
         help="Generate the planned compile and simulation commands without running any subprocesses.",
     )
     parser.add_argument(
+        "--perf-record",
+        action="store_true",
+        help="Wrap each simulation with Linux perf record -F <frequency> -g. Disabled by default.",
+    )
+    parser.add_argument(
+        "--perf-frequency",
+        type=int,
+        default=DEFAULT_PERF_FREQUENCY,
+        help="Sampling frequency for --perf-record. Default: %(default)s",
+    )
+    parser.add_argument(
+        "--perf-call-graph",
+        choices=["fp", "dwarf"],
+        default=None,
+        help="Optional perf call-graph unwinding mode, such as dwarf.",
+    )
+    parser.add_argument(
         "--send-email",
         action="store_true",
         help="Send the generated history HTML report by email after the workflow completes.",
@@ -220,7 +238,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--email-subject",
-        default="gem5 Smoke Report",
+        default="gem5 PERF Report",
         help="Email subject for the sent report. Default: %(default)s",
     )
     parser.add_argument(
@@ -299,7 +317,7 @@ def build_lsf_submission_command(args: argparse.Namespace, output_dir: Path, log
     if args.recipient_email:
         for recipient in args.recipient_email:
             command.extend(["--recipient-email", recipient])
-    if args.email_subject != "gem5 Smoke Report":
+    if args.email_subject != "gem5 PERF Report":
         command.extend(["--email-subject", args.email_subject])
     command.extend(["--lsf", "0"])
     return command
@@ -316,7 +334,7 @@ def resolve_output_dir(input_dir: Path, requested_output_dir: Optional[str]) -> 
     base_dir.mkdir(parents=True, exist_ok=True)
     index = 1
     while True:
-        candidate = base_dir / f"SMOKE_BUILD_{index}"
+        candidate = base_dir / f"PERF_BUILD_{index}"
         if not candidate.exists():
             return candidate
         index += 1
@@ -435,6 +453,7 @@ def git_clone(repo_url: str, destination_dir: Path, branch: str, logger: SmokeLo
 
     if branch:
         run_command(["git", "checkout", branch], cwd=repo_dir, logger=logger, allow_failure=True)
+        run_command(["git", "pull", "--ff-only", "origin", branch], cwd=repo_dir, logger=logger)
 
     metadata: Dict[str, Any] = {}
     metadata["commit_id"] = run_command(["git", "rev-parse", "HEAD"], cwd=repo_dir, logger=logger).stdout.strip()
@@ -932,6 +951,17 @@ def build_simulation_command(
     return command
 
 
+def wrap_perf_command(
+    command: List[str], frequency: int, call_graph: Optional[str] = None
+) -> List[str]:
+    """Wrap a gem5 command with Linux perf call-stack recording."""
+    wrapped = ["perf", "record", "-F", str(frequency), "-g"]
+    if call_graph:
+        wrapped.extend(["--call-graph", call_graph])
+    wrapped.extend(["--", *command])
+    return wrapped
+
+
 def build_compile_command(repo_dir: Path, build_type: str) -> List[str]:
     """Build the compile command for the requested gem5 build type.
     This is used by the dry-run mode to show the command that would be executed.
@@ -982,6 +1012,9 @@ def simulate_gem5(
     chip_name: str,
     chip_config: Dict[str, Any],
     case_name: Optional[str] = None,
+    perf_record: bool = False,
+    perf_frequency: int = DEFAULT_PERF_FREQUENCY,
+    perf_call_graph: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Run one chip simulation case and capture its results.
     The outputs are written under the chip-specific results directory for reporting.
@@ -1056,6 +1089,8 @@ def simulate_gem5(
         str(script_path),
         *script_args,
     ]
+    if perf_record:
+        command = wrap_perf_command(command, perf_frequency, perf_call_graph)
 
     simulation_log = resolved_outdir / "simulation.log"
     logger.warning(
@@ -1085,6 +1120,12 @@ def main() -> int:
     """
     args = parse_args()
     logger = SmokeLogger(verbose=args.verbose)
+
+    if args.perf_record and not args.dry_run and shutil.which("perf") is None:
+        logger.fatal(
+            "--perf-record requires Linux perf; no perf executable was found. "
+            "Run this PERF profile on Linux or omit --perf-record on macOS."
+        )
 
     start_time = time.perf_counter()
 
@@ -1119,7 +1160,11 @@ def main() -> int:
                         {
                             "chip": chip_name,
                             "case": case_name,
-                            "command": build_simulation_command(repo_dir, simulated_binary, chip_name, case_config, case_name),
+                            "command": wrap_perf_command(
+                                build_simulation_command(repo_dir, simulated_binary, chip_name, case_config, case_name),
+                                args.perf_frequency,
+                                args.perf_call_graph,
+                            ) if args.perf_record else build_simulation_command(repo_dir, simulated_binary, chip_name, case_config, case_name),
                             "resolved_outdir": str(resolved_outdir),
                             "output_dir": str(resolved_outdir),
                             "script": case_config.get("sim_script"),
@@ -1293,6 +1338,9 @@ def main() -> int:
                     chip_name,
                     case_config,
                     case_name=case_name,
+                    perf_record=args.perf_record,
+                    perf_frequency=args.perf_frequency,
+                    perf_call_graph=args.perf_call_graph,
                 )
                 simulation_runtime_seconds += simulation_result.get("runtime_seconds", 0.0)
                 chip_results.append(
@@ -1346,14 +1394,14 @@ def main() -> int:
             logger.error("LSF submission failed.")
         return 0
 
-    logger.warning("Smoke workflow completed successfully.")
-    generate_smoke_results_html(output_dir, logger)
-    generate_smoke_results_json(output_dir, logger)
-    generate_jenkins_history_smoke_results_html(DEFAULT_HISTORY_DIR, logger, limit=30)
-    generate_jenkins_history_smoke_results_json(DEFAULT_HISTORY_DIR, logger, limit=30)
+    logger.warning("PERF workflow completed successfully.")
+    generate_perf_results_html(output_dir, logger)
+    generate_perf_results_json(output_dir, logger)
+    generate_jenkins_history_perf_results_html(DEFAULT_HISTORY_DIR, logger, limit=30)
+    generate_jenkins_history_perf_results_json(DEFAULT_HISTORY_DIR, logger, limit=30)
 
     if args.send_email:
-        history_report_path = DEFAULT_HISTORY_DIR / "jenkins_history_smoke_results.html"
+        history_report_path = DEFAULT_HISTORY_DIR / "jenkins_history_perf_results.html"
         email_sent = send_history_report_email(
             html_report_path=history_report_path,
             to_addresses=args.recipient_email or ["shreyassbagi@gmail.com"],

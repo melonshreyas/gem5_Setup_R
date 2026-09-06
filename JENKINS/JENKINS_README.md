@@ -84,7 +84,7 @@ When using Pipeline script from SCM, the paths are:
 | WEEKLY_REGRESSION | `JENKINS/WEEKLY_REGRESSION/jenkins_weekly.groovy` |
 | MODEL_RELEASES | `JENKINS/MODEL_RELEASES/jenkins_model_release.groovy` |
 | PROFILE_RUNS/ASAN | `JENKINS/PROFILE_RUNS/ASAN/jenkins_asan.groovy` |
-| PROFILE_RUNS/PERF | `JENKINS/PROFILE_RUNS/PERF/jenkins_smoke.groovy` |
+| PROFILE_RUNS/PERF | `JENKINS/PROFILE_RUNS/PERF/jenkins_perf.groovy` |
 | DISK_SPACE | `JENKINS/DISK_SPACE/jenkins_disk_space.groovy` |
 
 After the first run, open **Build with Parameters** and confirm the parameter list matches
