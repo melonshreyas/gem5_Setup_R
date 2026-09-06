@@ -45,6 +45,25 @@ The complete list of options can be found in the build_opts directory.
 See https://www.gem5.org/documentation/general_docs/building for more
 information on building gem5.
 
+## AddressSanitizer profile runs
+
+The repository includes a Jenkins and local AddressSanitizer workflow under
+[JENKINS/PROFILE_RUNS/ASAN](JENKINS/PROFILE_RUNS/ASAN/README.md). It builds
+gem5 with `--sanitize=address`, runs the configured simulations, and stores
+the reports under the selected ASAN output directory.
+
+Each simulation writes its sanitizer output using the following path prefix:
+
+```text
+<ASAN_BUILD>/RESULTS/simulation/<chip>/<case>/asan.log
+```
+
+AddressSanitizer normally appends the process ID to that prefix, so the
+resulting file is usually named `asan.log.<pid>`. The workflow also records
+the simulation log, compile log, JSON summaries, HTML reports, and persistent
+history. See the ASAN README for the complete command, Jenkins parameters,
+output layout, and the captured heap-use-after-free evidence.
+
 ## The Source Tree
 
 The main source tree includes these subdirectories:

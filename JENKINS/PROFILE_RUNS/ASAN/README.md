@@ -26,6 +26,11 @@ python3 JENKINS/PROFILE_RUNS/ASAN/jenkins_asan.py \
 
 The compiler command is `scons build/ALL/gem5.opt --sanitize=address -j16 --ignore-style --install-hooks` for an opt build, or `scons build/ALL/gem5.debug --sanitize=address --ignore-style --install-hooks` for a debug build. ASAN builds are always recompiled so an ordinary cached gem5 binary cannot be mistaken for an instrumented binary.
 
+The runner creates or reuses the output directory, clones the repository when
+needed, fetches and fast-forwards an existing checkout to `origin/stable`,
+initializes submodules, compiles the selected target, runs the selected chip
+cases, and writes JSON/HTML reports and persistent history.
+
 Preview the commands without compiling or simulating:
 
 ```bash
@@ -44,9 +49,42 @@ Useful options include `--compile debug`, `--chip-name CHIP_1`, `--skip-compilat
 
 Create a Pipeline job using `JENKINS/PROFILE_RUNS/ASAN/jenkins_asan.groovy` from SCM. The pipeline accepts `BRANCH`, `INPUT_DIR`, `OUTPUT_DIR`, `CHIP_CONFIGURATION`, `COMPILE_TARGET`, `CHIP_NAME`, `SKIP_COMPILATION`, `SKIP_SIMULATION`, `DRY_RUN`, and `SEND_EMAIL`.
 
-Each simulation uses `ASAN_OPTIONS=halt_on_error=1:abort_on_error=1:symbolize=1:log_path=<case>/asan.log` so sanitizer failures stop the simulation, produce symbolized output, and remain in the captured logs. It publishes only ASAN artifacts.
+Each simulation uses `ASAN_OPTIONS=halt_on_error=1:abort_on_error=1:symbolize=1:log_path=<case>/asan.log` so sanitizer failures stop the simulation, produce symbolized output, and remain in the captured logs. `detect_leaks=1` is intentionally omitted because this macOS runtime does not support LeakSanitizer. It publishes only ASAN artifacts.
 
 ## ASAN Evidence
+
+### Captured failure
+
+The supplied ASAN report was captured on macOS arm64 with process ID `64744`.
+The configured log path is the prefix below; the runtime appends the process
+ID when it creates the report:
+
+```text
+/Users/diya/Documents/JENKINS/PROFILE_RUNS/PERF_RUN/ASAN/ASAN_BUILD_1/RESULTS/simulation/CHIP_1/smoke_test_cores_materials/asan.log
+/Users/diya/Documents/JENKINS/PROFILE_RUNS/PERF_RUN/ASAN/ASAN_BUILD_1/RESULTS/simulation/CHIP_1/smoke_test_cores_materials/asan.log.64744
+```
+
+The report is an `AddressSanitizer: heap-use-after-free` failure:
+
+```text
+READ of size 4 at 0x6020000085b0 thread T0
+SUMMARY: AddressSanitizer: heap-use-after-free init.cc:137 in gem5::EmbeddedPyBind::initAll(pybind11::module_&)
+```
+
+The failing access is in `src/sim/init.cc:137`. The matching free occurs at
+`src/sim/init.cc:136`, and the allocation occurs at `src/sim/init.cc:135`.
+The call sequence is:
+
+```text
+gem5::EmbeddedPyBind::initAll(pybind11::module_&)  init.cc:137
+gem5::(anonymous namespace)::initializer()          init.cc:156
+main                                               main.cc:87
+```
+
+This is the explicit diagnostic probe guarded by `GEM5_ASAN_TRIGGER=1`: it
+allocates an integer, frees it, and then reads from the freed pointer. The
+probe is intentional for validating ASAN capture and is not an unguarded
+normal-simulation path.
 
 The workflow was validated with an explicit, opt-in native probe. The probe is
 enabled only when `GEM5_ASAN_TRIGGER=1` is set; ordinary simulations do not
@@ -65,15 +103,19 @@ ASAN_OPTIONS='halt_on_error=1:abort_on_error=1:symbolize=1:log_path=/Users/diya/
 The captured terminal evidence reported:
 
 ```text
-==89943==ERROR: AddressSanitizer: heap-use-after-free on address 0x6020000085b0
+==64744==ERROR: AddressSanitizer: heap-use-after-free on address 0x6020000085b0
 READ of size 4 at 0x6020000085b0 thread T0
 ```
 
 The report was written to:
 
 ```text
-/Users/diya/Documents/JENKINS/PROFILE_RUNS/PERF_RUN/ASAN/ASAN_BUILD_1/RESULTS/simulation/CHIP_1/smoke_test_cores_materials/asan.log.89943
+/Users/diya/Documents/JENKINS/PROFILE_RUNS/PERF_RUN/ASAN/ASAN_BUILD_1/RESULTS/simulation/CHIP_1/smoke_test_cores_materials/asan.log.64744
 ```
+
+The deliberate probe is not part of normal validation. It is enabled only for
+the demonstration with `GEM5_ASAN_TRIGGER=1`; omit that variable for ordinary
+ASAN profile runs.
 
 On macOS, the terminal may also show `atos failed to symbolize address` warnings
 when the binary or source symbol paths are not available to the system symbolizer.
