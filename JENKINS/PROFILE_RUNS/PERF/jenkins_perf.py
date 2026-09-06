@@ -442,6 +442,11 @@ def git_clone(repo_url: str, destination_dir: Path, branch: str, logger: SmokeLo
     destination_dir.mkdir(parents=True, exist_ok=True)
     repo_dir = destination_dir
 
+    if not (repo_dir / ".git").exists() and any(repo_dir.iterdir()):
+        logger.fatal(
+            f"PERF output directory is not an empty Git checkout: {repo_dir}. "
+            "Choose a new PERF_BUILD directory or remove the stale output."
+        )
     if not (repo_dir / ".git").exists():
         logger.warning(f"Cloning repository into {repo_dir}")
         run_command(["git", "clone", "--recursive", repo_url, str(repo_dir)], cwd=destination_dir.parent, logger=logger)
