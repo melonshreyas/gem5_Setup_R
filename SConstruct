@@ -200,6 +200,9 @@ main = Environment(tools=[
 main.Tool(SCons.Tool.FindTool(['gcc', 'clang'], main))
 main.Tool(SCons.Tool.FindTool(['g++', 'clang++'], main))
 
+if sys.platform == 'darwin':
+    main.Tool('macos_socket')
+
 Export('main')
 
 from gem5_scons.util import get_termcap
@@ -791,7 +794,7 @@ for variant_path in variant_paths:
             libsan = (
                 ['-static-libubsan', '-static-libasan']
                 if env['GCC']
-                else ['-static-libsan']
+                else [] if sys.platform == 'darwin' else ['-static-libsan']
             )
             env.Append(CCFLAGS=['-fsanitize=%s' % sanitizers,
                                  '-fno-omit-frame-pointer'],
@@ -846,9 +849,11 @@ for variant_path in variant_paths:
     env['HAVE_PKG_CONFIG'] = env.Detect('pkg-config') == 'pkg-config'
 
     with gem5_scons.Configure(env) as conf:
-        # On Solaris you need to use libsocket for socket ops
+        # macOS provides socket calls through libSystem; the other platforms
+        # use the default libraries or Solaris' libsocket fallback.
+        socket_libraries = ['System'] if sys.platform == 'darwin' else [None, 'socket']
         if not conf.CheckLibWithHeader(
-                [None, 'socket'], 'sys/socket.h', 'C++',
+            socket_libraries, 'sys/socket.h', 'C++',
                 call='accept(0,0,0);'):
            error("Can't find library with socket calls (e.g. accept()).")
 
