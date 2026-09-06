@@ -46,6 +46,40 @@ Create a Pipeline job using `JENKINS/PROFILE_RUNS/ASAN/jenkins_asan.groovy` from
 
 Each simulation uses `ASAN_OPTIONS=halt_on_error=1:abort_on_error=1:symbolize=1:log_path=<case>/asan.log` so sanitizer failures stop the simulation, produce symbolized output, and remain in the captured logs. It publishes only ASAN artifacts.
 
+## ASAN Evidence
+
+The workflow was validated with an explicit, opt-in native probe. The probe is
+enabled only when `GEM5_ASAN_TRIGGER=1` is set; ordinary simulations do not
+execute it.
+
+```bash
+GEM5_ASAN_TRIGGER=1 \
+ASAN_OPTIONS='halt_on_error=1:abort_on_error=1:symbolize=1:log_path=/Users/diya/Documents/JENKINS/PROFILE_RUNS/PERF_RUN/ASAN/ASAN_BUILD_1/RESULTS/simulation/CHIP_1/smoke_test_cores_materials/asan.log' \
+/Users/diya/Documents/gem5_Setup_R/build/ALL/gem5.opt \
+  --outdir=/Users/diya/Documents/JENKINS/PROFILE_RUNS/PERF_RUN/ASAN/ASAN_BUILD_1/RESULTS/simulation/CHIP_1/smoke_test_cores_materials \
+  --redirect-stdout \
+  --redirect-stderr \
+  /Users/diya/Documents/gem5_Setup_R/materials/02-Using-gem5/04-cores/cores.py
+```
+
+The captured terminal evidence reported:
+
+```text
+==89943==ERROR: AddressSanitizer: heap-use-after-free on address 0x6020000085b0
+READ of size 4 at 0x6020000085b0 thread T0
+```
+
+The report was written to:
+
+```text
+/Users/diya/Documents/JENKINS/PROFILE_RUNS/PERF_RUN/ASAN/ASAN_BUILD_1/RESULTS/simulation/CHIP_1/smoke_test_cores_materials/asan.log.89943
+```
+
+On macOS, the terminal may also show `atos failed to symbolize address` warnings
+when the binary or source symbol paths are not available to the system symbolizer.
+The ASAN detection itself is still confirmed by the `heap-use-after-free` and
+`READ of size 4` lines.
+
 ## Output Layout
 
 ```text
