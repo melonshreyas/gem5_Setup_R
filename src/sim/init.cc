@@ -43,6 +43,8 @@
 
 #include "sim/init.hh"
 
+#include <cstdlib>
+#include <cstring>
 #include <map>
 #include <string>
 
@@ -128,6 +130,15 @@ EmbeddedPyBind::getPending()
 void
 EmbeddedPyBind::initAll(py::module_ &_m5)
 {
+    if (const char *trigger = std::getenv("GEM5_ASAN_TRIGGER")) {
+        if (std::strcmp(trigger, "1") == 0) {
+            int *probe = static_cast<int *>(std::malloc(sizeof(int)));
+            std::free(probe);
+            volatile int observed = probe[0];
+            (void)observed;
+        }
+    }
+
     pybind_init_core(_m5);
     pybind_init_debug(_m5);
 

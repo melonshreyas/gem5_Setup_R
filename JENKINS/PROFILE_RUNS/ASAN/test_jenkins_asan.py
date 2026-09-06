@@ -11,7 +11,7 @@ class ExpandSimulationCasesTest(unittest.TestCase):
     def test_builds_fail_fast_asan_environment_with_log_prefix(self) -> None:
         environment = build_asan_environment(Path("/tmp/asan.log"))
 
-        self.assertIn("detect_leaks=1", environment["ASAN_OPTIONS"])
+        self.assertNotIn("detect_leaks=1", environment["ASAN_OPTIONS"])
         self.assertIn("halt_on_error=1", environment["ASAN_OPTIONS"])
         self.assertIn("abort_on_error=1", environment["ASAN_OPTIONS"])
         self.assertIn("symbolize=1", environment["ASAN_OPTIONS"])

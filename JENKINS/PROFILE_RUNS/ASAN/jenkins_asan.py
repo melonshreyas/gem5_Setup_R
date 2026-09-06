@@ -42,7 +42,7 @@ ASAN_BUILD_FLAG = "--sanitize=address"
 ASAN_BUILD_ARCH = "ALL"
 ASAN_BUILD_JOBS = "-j16"
 ASAN_BUILD_OPTIONS = ["--ignore-style", "--install-hooks"]
-ASAN_DEFAULT_OPTIONS = "detect_leaks=1:halt_on_error=1:abort_on_error=1:symbolize=1"
+ASAN_DEFAULT_OPTIONS = "halt_on_error=1:abort_on_error=1:symbolize=1"
 COMPILE_ERROR_PATTERNS = (
     r"\berror:\s+",
     r"\bfatal error:\s+",

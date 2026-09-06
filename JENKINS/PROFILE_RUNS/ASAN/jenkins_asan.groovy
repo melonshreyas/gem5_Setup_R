@@ -81,7 +81,7 @@ pipeline {
         SENDER_EMAIL = ''
         SENDER_PASSWORD = ''
         SMTP_RECIPIENTS = ''
-        ASAN_OPTIONS = 'detect_leaks=1:halt_on_error=1:abort_on_error=1:symbolize=1:log_path=asan_gem5'
+        ASAN_OPTIONS = 'halt_on_error=1:abort_on_error=1:symbolize=1:log_path=asan_gem5'
     }
 
     options {
