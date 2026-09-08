@@ -4,6 +4,7 @@ build
 gem5_build
 parser.out
 parsetab.py
+.sconsign.dblite
 cscope.files
 cscope.out
 *.pyc
