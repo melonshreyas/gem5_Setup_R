@@ -41,7 +41,13 @@ python3 JENKINS/PROFILE_RUNS/PERF/jenkins_perf.py \
   --dry_run
 ```
 
-Useful options include `--compile debug`, `--chip-name ALL`, `--skip-compilation`, `--skip_simulation`, `--verbose`, `--lsf 1`, and `--send-email`.
+The PERF compile command is `scons build/ALL/gem5.opt -j20 --ignore-style --install-hooks` for an opt build, or `scons build/ALL/gem5.debug -j20 --ignore-style --install-hooks` for a debug build. PERF does not add sanitizer instrumentation.
+
+The runner clones the repository when the output directory is new. If the directory already contains a Git checkout, it fetches and fast-forwards the requested branch before running. A non-empty directory that is not a Git checkout is rejected; choose a new `PERF_BUILD_<n>` directory instead of reusing stale output.
+
+Useful options include `--compile debug`, `--chip-name ALL`, `--skip-compilation`, `--skip_simulation`, `--verbose`, `--send-email`, and LSF execution with `--lsf 1 --lsf-queue normal --lsf-memory 64GB --lsf-walltime 24:00`.
+
+`--dry_run` writes `RESULTS/dry_run_results.json` with the planned compile and simulation commands and does not run subprocesses. `--skip_simulation` skips the simulation phase but still produces summary, HTML, and JSON reports.
 
 ## Platform requirement for `perf`
 
@@ -91,7 +97,9 @@ The wrapper is disabled by default because macOS does not provide Linux `perf`.
 
 Create a Pipeline job using `JENKINS/PROFILE_RUNS/PERF/jenkins_perf.groovy` from SCM. The pipeline checks out `stable`, runs the PERF workflow, archives PERF artifacts, and publishes the PERF history report.
 
-The job accepts `BRANCH`, `INPUT_DIR`, `OUTPUT_DIR`, `CHIP_CONFIGURATION`, `COMPILE_TARGET`, `CHIP_NAME`, `SKIP_COMPILATION`, `SKIP_SIMULATION`, `DRY_RUN`, and `SEND_EMAIL`.
+The job accepts `BRANCH`, `INPUT_DIR`, `OUTPUT_DIR`, `CHIP_CONFIGURATION`, `COMPILE_TARGET`, `CHIP_NAME`, `SKIP_COMPILATION`, `SKIP_SIMULATION`, `DRY_RUN`, `PERF_RECORD`, `PERF_FREQUENCY`, `PERF_CALL_GRAPH`, and `SEND_EMAIL`.
+
+Email delivery requires the SMTP environment values configured by the job. `--lsf` is available to the Python runner for batch execution but is not exposed as a Jenkins parameter in the current pipeline.
 
 ## Output Layout
 
@@ -107,6 +115,7 @@ PERF_BUILD_<n>/
     │   └── results_compilation.json
     └── simulation/<chip>/<case>/
         ├── simulation.log
+        ├── perf.data (when --perf-record is enabled)
         ├── stats.txt
         └── results_simulation.json
 ```

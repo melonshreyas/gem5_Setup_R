@@ -24,7 +24,9 @@ python3 JENKINS/PROFILE_RUNS/ASAN/jenkins_asan.py \
   --chip-name ALL
 ```
 
-The compiler command is `scons build/ALL/gem5.opt --sanitize=address -j16 --ignore-style --install-hooks` for an opt build, or `scons build/ALL/gem5.debug --sanitize=address --ignore-style --install-hooks` for a debug build. ASAN builds are always recompiled so an ordinary cached gem5 binary cannot be mistaken for an instrumented binary.
+The compiler command is `scons build/ALL/gem5.opt --sanitize=address -j16 --ignore-style --install-hooks` for an opt build, or `scons build/ALL/gem5.debug --sanitize=address -j16 --ignore-style --install-hooks` for a debug build. ASAN builds are always recompiled so an ordinary cached gem5 binary cannot be mistaken for an instrumented binary.
+
+The runner clones the repository when the output directory is new, or reuses an existing Git checkout after fetching the requested branch and initializing submodules. Use a dedicated `ASAN_BUILD_<n>` directory so sanitizer binaries, logs, and reports remain isolated from other workflows.
 
 The runner creates or reuses the output directory, clones the repository when
 needed, fetches and fast-forwards an existing checkout to `origin/stable`,
@@ -43,11 +45,15 @@ python3 JENKINS/PROFILE_RUNS/ASAN/jenkins_asan.py \
   --dry_run
 ```
 
-Useful options include `--compile debug`, `--chip-name CHIP_1`, `--skip-compilation`, `--skip_simulation`, `--verbose`, and `--send-email`.
+Useful options include `--compile debug`, `--chip-name CHIP_1`, `--skip-compilation`, `--skip_simulation`, `--verbose`, `--send-email`, and LSF execution with `--lsf 1 --lsf-queue normal --lsf-memory 64GB --lsf-walltime 24:00`.
+
+`--dry_run` writes `RESULTS/dry_run_results.json` with the planned compile and simulation commands and does not run subprocesses. `--skip_simulation` skips the simulation phase but still produces summary, HTML, and JSON reports.
 
 ## Jenkins Setup
 
 Create a Pipeline job using `JENKINS/PROFILE_RUNS/ASAN/jenkins_asan.groovy` from SCM. The pipeline accepts `BRANCH`, `INPUT_DIR`, `OUTPUT_DIR`, `CHIP_CONFIGURATION`, `COMPILE_TARGET`, `CHIP_NAME`, `SKIP_COMPILATION`, `SKIP_SIMULATION`, `DRY_RUN`, and `SEND_EMAIL`.
+
+The Python runner also accepts `--lsf`, `--lsf-queue`, `--lsf-memory`, and `--lsf-walltime` for batch execution. Email delivery requires the SMTP environment values configured by the job. The Jenkins pipeline sets the default ASAN runtime controls and publishes only ASAN artifacts.
 
 Each simulation uses `ASAN_OPTIONS=halt_on_error=1:abort_on_error=1:symbolize=1:log_path=<case>/asan.log` so sanitizer failures stop the simulation, produce symbolized output, and remain in the captured logs. `detect_leaks=1` is intentionally omitted because this macOS runtime does not support LeakSanitizer. It publishes only ASAN artifacts.
 
@@ -115,7 +121,9 @@ The report was written to:
 
 The deliberate probe is not part of normal validation. It is enabled only for
 the demonstration with `GEM5_ASAN_TRIGGER=1`; omit that variable for ordinary
-ASAN profile runs.
+ASAN profile runs. The probe is deliberately destructive, so use a disposable
+ASAN build directory and never enable it for a normal simulation or production
+workload.
 
 On macOS, the terminal may also show `atos failed to symbolize address` warnings
 when the binary or source symbol paths are not available to the system symbolizer.
