@@ -10,6 +10,34 @@ This job runs gem5 simulations for performance-oriented profiling and stores out
 - `chip_configuration.json`: chip and testcase definitions.
 - `test_jenkins_perf.py`: focused workflow tests.
 
+## Directory Structure
+
+The tracked PERF workflow files are kept together under
+`JENKINS/PROFILE_RUNS/PERF/`:
+
+```text
+JENKINS/PROFILE_RUNS/PERF/
+├── README.md
+├── chip_configuration.json
+├── jenkins_perf.groovy
+├── jenkins_perf.py
+├── jenkins_perf_html.py
+├── send_email_report.py
+└── test_jenkins_perf.py
+```
+
+Run directories and history are generated outside the repository:
+
+```text
+/Users/diya/Documents/JENKINS/
+├── PROFILE_RUNS/PERF_RUN/PERF/
+│   └── PERF_BUILD_<n>/       # checkout, build, logs, and reports
+└── HISTORY/PROFILE_RUNS/PROFILE/PERF/
+  └── ...                    # persistent reports across runs
+```
+
+Use `/tmp/gem5-perf-dry-run` or another disposable directory for previews.
+
 ## Paths
 
 - Run output: `/Users/diya/Documents/JENKINS/PROFILE_RUNS/PERF_RUN/PERF/`
@@ -105,7 +133,9 @@ Email delivery requires the SMTP environment values configured by the job. `--ls
 
 ```text
 PERF_BUILD_<n>/
-├── build/ALL/gem5.opt or gem5.debug
+├── .git/
+├── build/ALL/
+│   └── gem5.opt or gem5.debug
 └── RESULTS/
     ├── perf_results.html
     ├── perf_results.json
@@ -119,6 +149,10 @@ PERF_BUILD_<n>/
         ├── stats.txt
         └── results_simulation.json
 ```
+
+      `perf.data` is created in the simulation case directory only when
+      `--perf-record` is enabled on Linux. `dry_run_results.json` replaces the normal
+      report set when `--dry_run` is used.
 
 Persistent history is written under `/Users/diya/Documents/JENKINS/HISTORY/PROFILE_RUNS/PROFILE/PERF/`:
 

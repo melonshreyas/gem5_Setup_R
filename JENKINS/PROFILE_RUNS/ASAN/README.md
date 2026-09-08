@@ -10,6 +10,33 @@ This job builds gem5 with AddressSanitizer, runs the configured simulations, and
 - `chip_configuration.json`: chip and testcase definitions.
 - `test_jenkins_asan.py`: focused workflow tests.
 
+## Directory Structure
+
+The tracked ASAN workflow files are kept together under
+`JENKINS/PROFILE_RUNS/ASAN/`:
+
+```text
+JENKINS/PROFILE_RUNS/ASAN/
+├── README.md
+├── chip_configuration.json
+├── jenkins_asan.groovy
+├── jenkins_asan.py
+├── jenkins_asan_html.py
+├── send_email_report.py
+└── test_jenkins_asan.py
+```
+
+Run directories and history are generated outside the repository:
+
+```text
+/Users/diya/Documents/JENKINS/
+├── PROFILE_RUNS/PERF_RUN/ASAN/
+│   └── ASAN_BUILD_<n>/        # checkout, build, logs, and reports
+└── HISTORY/PROFILE_RUNS/ASAN/ # persistent reports across runs
+```
+
+Use `/tmp/gem5-asan-dry-run` or another disposable directory for previews.
+
 ## Local Run
 
 From the repository root:
@@ -134,7 +161,9 @@ The ASAN detection itself is still confirmed by the `heap-use-after-free` and
 
 ```text
 ASAN_BUILD_<n>/
-├── build/ALL/gem5.opt or gem5.debug
+├── .git/
+├── build/ALL/
+│   └── gem5.opt or gem5.debug
 └── RESULTS/
     ├── asan_results.html
     ├── asan_results.json
@@ -148,6 +177,10 @@ ASAN_BUILD_<n>/
         ├── stats.txt
         └── results_simulation.json
 ```
+
+  `asan.log.*` is produced only when AddressSanitizer emits a report; the suffix
+  is normally the process ID. `dry_run_results.json` replaces the normal report
+  set when `--dry_run` is used.
 
 Persistent history is written under `/Users/diya/Documents/JENKINS/HISTORY/PROFILE_RUNS/ASAN/`:
 
