@@ -88,14 +88,34 @@ Each simulation uses `ASAN_OPTIONS=halt_on_error=1:abort_on_error=1:symbolize=1:
 
 ### Captured failure
 
-The supplied ASAN report was captured on macOS arm64 with process ID `64744`.
+The supplied ASAN report was captured on macOS arm64 with process ID `89943`.
 The configured log path is the prefix below; the runtime appends the process
 ID when it creates the report:
 
 ```text
 /Users/diya/Documents/JENKINS/PROFILE_RUNS/PERF_RUN/ASAN/ASAN_BUILD_1/RESULTS/simulation/CHIP_1/smoke_test_cores_materials/asan.log
-/Users/diya/Documents/JENKINS/PROFILE_RUNS/PERF_RUN/ASAN/ASAN_BUILD_1/RESULTS/simulation/CHIP_1/smoke_test_cores_materials/asan.log.64744
+/Users/diya/Documents/JENKINS/PROFILE_RUNS/PERF_RUN/ASAN/ASAN_BUILD_1/RESULTS/simulation/CHIP_1/smoke_test_cores_materials/asan.log.89943
 ```
+
+The captured `asan.log.89943` output is:
+
+```text
+=================================================================
+==89943==ERROR: AddressSanitizer: heap-use-after-free on address 0x6020000085b0
+at pc 0x00010cc86fb4 bp 0x00016bdafdd0 sp 0x00016bdafdc8
+READ of size 4 at 0x6020000085b0 thread T0
+==89943==WARNING: Can't read from symbolizer at fd 5
+==89943==WARNING: atos failed to symbolize address "0x10cc86fb0"
+==89943==WARNING: Can't read from symbolizer at fd 5
+==89943==WARNING: atos failed to symbolize address "0x10cc8703c"
+==89943==WARNING: Can't write to symbolizer at fd 5
+```
+
+The log is created from the configured `log_path` prefix. AddressSanitizer
+appends the process ID, so the configured `asan.log` path becomes
+`asan.log.89943` for this run. The symbolizer warnings are macOS reporting
+limitations; the `heap-use-after-free` and `READ of size 4` lines confirm that
+the sanitizer detected the failure.
 
 The report is an `AddressSanitizer: heap-use-after-free` failure:
 
@@ -136,14 +156,14 @@ ASAN_OPTIONS='halt_on_error=1:abort_on_error=1:symbolize=1:log_path=/Users/diya/
 The captured terminal evidence reported:
 
 ```text
-==64744==ERROR: AddressSanitizer: heap-use-after-free on address 0x6020000085b0
+==89943==ERROR: AddressSanitizer: heap-use-after-free on address 0x6020000085b0
 READ of size 4 at 0x6020000085b0 thread T0
 ```
 
 The report was written to:
 
 ```text
-/Users/diya/Documents/JENKINS/PROFILE_RUNS/PERF_RUN/ASAN/ASAN_BUILD_1/RESULTS/simulation/CHIP_1/smoke_test_cores_materials/asan.log.64744
+/Users/diya/Documents/JENKINS/PROFILE_RUNS/PERF_RUN/ASAN/ASAN_BUILD_1/RESULTS/simulation/CHIP_1/smoke_test_cores_materials/asan.log.89943
 ```
 
 The deliberate probe is not part of normal validation. It is enabled only for
